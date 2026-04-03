@@ -68,12 +68,28 @@ subprojects {
         useJUnitPlatform()
     }
 
-    // ── Checkstyle (Google style) ────────────────────────────────────────────
+    // ── Checkstyle (official Google checks — read directly from the Checkstyle jar) ──
+    // google_checks.xml is bundled inside the Checkstyle tool jar itself.
+    // Referencing it this way means we always use the canonical, unmodified
+    // Google Java Style config that ships with the chosen toolVersion —
+    // no local copy that can drift or be accidentally modified.
     checkstyle {
         toolVersion = "10.21.1"
-        configFile  = rootProject.file("config/checkstyle/checkstyle.xml")
+        config = resources.text.fromArchiveEntry(
+            configurations.getByName("checkstyle").resolvedConfiguration
+                .resolvedArtifacts.first { it.name == "checkstyle" }.file,
+            "google_checks.xml"
+        )
         isIgnoreFailures = false
         maxWarnings = 0
+    }
+
+    // Exclude generated / trivial sources from Checkstyle analysis.
+    // MapStruct generates *MapperImpl.java files that are not hand-written code.
+    // *Application.java classes are one-liner Spring Boot entry points.
+    tasks.withType<Checkstyle> {
+        exclude("**/*MapperImpl.java")
+        exclude("**/*Application.java")
     }
 
     // ── JaCoCo – code coverage ───────────────────────────────────────────────

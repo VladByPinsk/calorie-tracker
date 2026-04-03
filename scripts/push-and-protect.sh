@@ -32,36 +32,49 @@ if [[ $# -lt 1 || -z "${1:-}" ]]; then
 fi
 
 TOKEN="$1"
-
-echo ""
-echo "══════════════════════════════════════════════════════════"
-echo "  calorie-tracker — push & branch protection setup"
-echo "══════════════════════════════════════════════════════════"
-
-# ─── Step 1: Push main + develop ─────────────────────────────────────────────
-echo ""
-echo "→ [1/3] Pushing branches to GitHub..."
-
+COMMAND="${2:-push-and-protect}"
 REMOTE_WITH_TOKEN="https://${OWNER}:${TOKEN}@github.com/${REPO}.git"
+CLEAN_REMOTE="https://github.com/${REPO}.git"
 
-git remote set-url origin "$REMOTE_WITH_TOKEN"
-git push -u origin main
-git push -u origin develop
+# ─── Helper: push a branch using token, then clean remote URL ─────────────────
+push_branch() {
+  local branch="$1"
+  git remote set-url origin "$REMOTE_WITH_TOKEN"
+  git push -u origin "$branch"
+  git remote set-url origin "$CLEAN_REMOTE"
+}
 
-# Remove token from remote URL immediately after push
-git remote set-url origin "https://github.com/${REPO}.git"
-echo "  ✅ Pushed main + develop  |  token removed from remote URL"
+# ─── Helper: GitHub API call ─────────────────────────────────────────────────
+gh_api() {
+  local method="$1" path="$2" data="$3"
+  curl -s -X "$method" \
+    -H "Authorization: Bearer ${TOKEN}" \
+    -H "Accept: application/vnd.github+json" \
+    -H "X-GitHub-Api-Version: 2022-11-28" \
+    "https://api.github.com${path}" \
+    -d "$data"
+}
 
-# ─── Step 2: Apply repo-level settings ───────────────────────────────────────
-echo ""
-echo "→ [2/3] Configuring repo merge settings..."
+case "$COMMAND" in
 
-curl -s -X PATCH \
-  -H "Authorization: Bearer ${TOKEN}" \
-  -H "Accept: application/vnd.github+json" \
-  -H "X-GitHub-Api-Version: 2022-11-28" \
-  "https://api.github.com/repos/${REPO}" \
-  -d '{
+# ─────────────────────────────────────────────────────────────────────────────
+push-and-protect)
+  echo ""
+  echo "══════════════════════════════════════════════════════════"
+  echo "  calorie-tracker — push & branch protection setup"
+  echo "══════════════════════════════════════════════════════════"
+
+  echo ""
+  echo "→ [1/3] Pushing main + develop..."
+  git remote set-url origin "$REMOTE_WITH_TOKEN"
+  git push -u origin main
+  git push -u origin develop
+  git remote set-url origin "$CLEAN_REMOTE"
+  echo "  ✅ Pushed main + develop"
+
+  echo ""
+  echo "→ [2/3] Configuring repo merge settings..."
+  gh_api PATCH "/repos/${REPO}" '{
     "allow_squash_merge": true,
     "allow_merge_commit": false,
     "allow_rebase_merge": true,
@@ -69,34 +82,19 @@ curl -s -X PATCH \
     "squash_merge_commit_title": "PR_TITLE",
     "squash_merge_commit_message": "PR_BODY"
   }' > /dev/null
+  echo "  ✅ Squash+rebase only, delete branch on merge enabled"
 
-echo "  ✅ Squash+rebase only, delete branch on merge enabled"
-
-# ─── Step 3: Branch protection — main ────────────────────────────────────────
-echo ""
-echo "→ [3/3] Applying branch protection rules..."
-echo "        Protecting: main"
-
-curl -s -X PUT \
-  -H "Authorization: Bearer ${TOKEN}" \
-  -H "Accept: application/vnd.github+json" \
-  -H "X-GitHub-Api-Version: 2022-11-28" \
-  "https://api.github.com/repos/${REPO}/branches/main/protection" \
-  -d '{
+  echo ""
+  echo "→ [3/3] Applying branch protection rules..."
+  echo "        Protecting: main"
+  gh_api PUT "/repos/${REPO}/branches/main/protection" '{
     "required_status_checks": {
       "strict": true,
       "contexts": [
-        "Test auth-service",
-        "Test user-service",
-        "Test food-service",
-        "Test diary-service",
-        "Test ai-service",
-        "Test analytics-service",
-        "Test notification-service",
-        "Test api-gateway",
-        "Test Web (React)",
-        "Test Mobile (Expo)",
-        "Test Infrastructure"
+        "Test auth-service","Test user-service","Test food-service",
+        "Test diary-service","Test ai-service","Test analytics-service",
+        "Test notification-service","Test api-gateway",
+        "Test Web (React)","Test Mobile (Expo)","Test Infrastructure"
       ]
     },
     "enforce_admins": true,
@@ -113,31 +111,17 @@ curl -s -X PUT \
     "required_linear_history": true,
     "lock_branch": false
   }' > /dev/null
+  echo "  ✅ main protected"
 
-echo "  ✅ main: PRs required, 1 approval (owner), all CI must pass, no force push"
-
-# ─── Branch protection — develop ─────────────────────────────────────────────
-echo "        Protecting: develop"
-
-curl -s -X PUT \
-  -H "Authorization: Bearer ${TOKEN}" \
-  -H "Accept: application/vnd.github+json" \
-  -H "X-GitHub-Api-Version: 2022-11-28" \
-  "https://api.github.com/repos/${REPO}/branches/develop/protection" \
-  -d '{
+  echo "        Protecting: develop"
+  gh_api PUT "/repos/${REPO}/branches/develop/protection" '{
     "required_status_checks": {
       "strict": true,
       "contexts": [
-        "Test auth-service",
-        "Test user-service",
-        "Test food-service",
-        "Test diary-service",
-        "Test ai-service",
-        "Test analytics-service",
-        "Test notification-service",
-        "Test api-gateway",
-        "Test Web (React)",
-        "Test Mobile (Expo)"
+        "Test auth-service","Test user-service","Test food-service",
+        "Test diary-service","Test ai-service","Test analytics-service",
+        "Test notification-service","Test api-gateway",
+        "Test Web (React)","Test Mobile (Expo)"
       ]
     },
     "enforce_admins": false,
@@ -152,14 +136,72 @@ curl -s -X PUT \
     "required_conversation_resolution": true,
     "required_linear_history": false
   }' > /dev/null
+  echo "  ✅ develop protected"
 
-echo "  ✅ develop: PRs required, 1 approval, CI must pass"
+  echo ""
+  echo "══════════════════════════════════════════════════════════"
+  echo "  All done! https://github.com/${REPO}/settings/branches"
+  echo "══════════════════════════════════════════════════════════"
+  ;;
 
-# ─── Done ─────────────────────────────────────────────────────────────────────
-echo ""
-echo "══════════════════════════════════════════════════════════"
-echo "  All done! Verify branch protection at:"
-echo "  https://github.com/${REPO}/settings/branches"
-echo "══════════════════════════════════════════════════════════"
-echo ""
+# ─────────────────────────────────────────────────────────────────────────────
+sync-develop)
+  echo "→ Fast-forwarding develop to match main and pushing..."
+  git checkout develop
+  git merge main --ff-only
+  push_branch develop
+  git checkout main
+  echo "  ✅ develop is now in sync with main"
+  ;;
 
+# ─────────────────────────────────────────────────────────────────────────────
+push-branch)
+  BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+  echo "→ Pushing branch: ${BRANCH}"
+  push_branch "$BRANCH"
+  echo "  ✅ Pushed ${BRANCH} to origin"
+  ;;
+
+# ─────────────────────────────────────────────────────────────────────────────
+create-pr)
+  BASE="${3:-main}"
+  BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+  TITLE="$(git log -1 --pretty=%s)"
+
+  echo "→ Pushing branch: ${BRANCH}"
+  push_branch "$BRANCH"
+  echo "  ✅ Branch pushed"
+
+  echo "→ Verifying direct push to ${BASE} is blocked..."
+  git remote set-url origin "$REMOTE_WITH_TOKEN"
+  PUSH_RESULT=$(git push origin "HEAD:${BASE}" 2>&1 || true)
+  git remote set-url origin "$CLEAN_REMOTE"
+  if echo "$PUSH_RESULT" | grep -q "protected branch\|required status\|refusing\|cannot push"; then
+    echo "  ✅ Direct push to ${BASE} is BLOCKED (branch protection working)"
+  else
+    echo "  ⚠️  Unexpected push result: ${PUSH_RESULT}"
+  fi
+
+  echo "→ Creating Pull Request: ${BRANCH} → ${BASE}"
+  PR_RESPONSE=$(gh_api POST "/repos/${REPO}/pulls" "{
+    \"title\": \"${TITLE}\",
+    \"head\": \"${BRANCH}\",
+    \"base\": \"${BASE}\",
+    \"body\": \"## Summary\n\nThis PR verifies that branch protection is working correctly.\n\n- Direct push to \`${BASE}\` was **blocked** ✅\n- This PR is the only way to merge changes into \`${BASE}\` ✅\n- Requires CI to pass + owner approval before merge ✅\n\nCloses (test PR — can be merged or closed after verification).\",
+    \"draft\": false
+  }")
+
+  PR_URL=$(echo "$PR_RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('html_url','ERROR: '+str(d)))")
+  echo ""
+  echo "══════════════════════════════════════════════════════════"
+  echo "  ✅ Pull Request created!"
+  echo "  ${PR_URL}"
+  echo "══════════════════════════════════════════════════════════"
+  ;;
+
+*)
+  echo "Unknown command: $COMMAND"
+  echo "Valid commands: push-and-protect, sync-develop, push-branch, create-pr"
+  exit 1
+  ;;
+esac

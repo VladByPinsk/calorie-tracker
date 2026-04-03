@@ -37,6 +37,16 @@ subprojects {
 
     configurations {
         compileOnly { extendsFrom(configurations.annotationProcessor.get()) }
+        all {
+            resolutionStrategy {
+                // CVE-2026-24400 / GHSA-rqfh-9r24-8c9r
+                // XXE in AssertJ XmlStringPrettyFormatter (isXmlEqualTo assertion).
+                // Spring Boot 4.0.0 BOM brings in 3.27.6 which is vulnerable.
+                // 3.27.7 is the patched release — force it across all configurations.
+                // TODO: remove this override once the Spring Boot BOM is updated.
+                force("org.assertj:assertj-core:3.27.7")
+            }
+        }
     }
 
     dependencies {

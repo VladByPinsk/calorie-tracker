@@ -25,6 +25,6 @@ dependencies {
 }
 
 jib {
-    from { image = "eclipse-temurin:26-jre-alpine" }
+    from { image = "amazoncorretto:26-alpine" }
     to   { image = "ghcr.io/VladByPinsk/calorie-tracker/food-service:${project.version}" }
 }

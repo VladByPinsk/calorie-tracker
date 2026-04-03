@@ -3,7 +3,7 @@
 > Full-stack microservice calorie & nutrition tracking app with self-hosted AI — no external API costs.
 
 [![CI](https://github.com/VladByPinsk/calorie-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/VladByPinsk/calorie-tracker/actions/workflows/ci.yml)
-[![Java](https://img.shields.io/badge/Java-26-orange?logo=openjdk)](https://openjdk.org/)
+[![Java](https://img.shields.io/badge/Amazon_Corretto-26-FF9900?logo=amazon-aws)](https://aws.amazon.com/corretto/)
 [![Spring Boot](https://img.shields.io/badge/Spring_Boot-4.0-green?logo=springboot)](https://spring.io/projects/spring-boot)
 [![Gradle](https://img.shields.io/badge/Gradle-9-blue?logo=gradle)](https://gradle.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -44,7 +44,7 @@ A full-stack **calorie and nutrition tracker** with:
 
 | Layer | Technology |
 |---|---|
-| **Backend** | Java 26 · Spring Boot 4 · Spring Cloud · Spring AI |
+| **Backend** | Java 26 (Amazon Corretto) · Spring Boot 4 · Spring Cloud · Spring AI |
 | **Build** | Gradle 9 (Kotlin DSL) — monorepo multi-project |
 | **Architecture** | Microservices · Apache Kafka · API Gateway · Eureka · Config Server |
 | **AI** | Ollama · `gemma3:12b` (text) · `qwen3-vl:8b` (vision) · `nomic-embed-text` (embeddings) |
@@ -129,7 +129,7 @@ A full-stack **calorie and nutrition tracker** with:
 
 ### Prerequisites
 
-- **Java 26** — [Temurin 26](https://adoptium.net/)
+- **Java 26** — [Amazon Corretto 26](https://aws.amazon.com/corretto/)
 - **Docker Desktop** — [docker.com](https://www.docker.com/products/docker-desktop/)
 - **Node.js 22** — [nodejs.org](https://nodejs.org/)
 - **Gradle 9** — or just use the included `./gradlew` wrapper (no install needed)

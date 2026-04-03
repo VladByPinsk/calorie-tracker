@@ -1,5 +1,5 @@
 # Multi-stage build — keeps final image small
-FROM eclipse-temurin:26-jdk-alpine AS builder
+FROM amazoncorretto:26-alpine AS builder
 WORKDIR /app
 COPY gradlew .
 COPY gradle gradle
@@ -10,7 +10,7 @@ COPY services/food-service/build.gradle.kts services/food-service/
 COPY services/food-service/src services/food-service/src
 RUN ./gradlew ::services:food-service:bootJar --no-daemon -q
 
-FROM eclipse-temurin:26-jre-alpine
+FROM amazoncorretto:26-alpine
 RUN addgroup -S spring && adduser -S spring -G spring
 USER spring
 WORKDIR /app

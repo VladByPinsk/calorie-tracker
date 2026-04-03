@@ -35,7 +35,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: '21'
-          distribution: temurin
+          distribution: corretto
           cache: gradle
 
       - name: Run tests
@@ -112,7 +112,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: '21'
-          distribution: temurin
+          distribution: corretto
           cache: gradle
 
       - name: Log in to GHCR
@@ -138,7 +138,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: '21'
-          distribution: temurin
+          distribution: corretto
           cache: gradle
 
       - run: ./gradlew :infrastructure:eureka-server:bootJar

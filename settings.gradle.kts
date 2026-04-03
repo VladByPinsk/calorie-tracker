@@ -6,6 +6,11 @@ pluginManagement {
     }
 }
 
+// ─── Toolchain resolver: lets Gradle auto-provision Amazon Corretto 26 on CI ─
+plugins {
+    id("org.gradle.toolchains.foojay-resolver-convention") version "0.9.0"
+}
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {

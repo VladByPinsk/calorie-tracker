@@ -11,7 +11,7 @@ ext {
     set("springCloudVersion", "2025.0.0")
     set("springAiVersion",    "1.0.0")
     set("mapstructVersion",   "1.6.3")
-    set("lombokVersion",      "1.18.36")
+    set("lombokVersion",      "1.18.40")
     set("testcontainersVer",  "1.21.0")
     set("flywayVersion",      "11.3.4")
     set("jwtVersion",         "0.12.6")

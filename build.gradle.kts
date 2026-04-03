@@ -79,7 +79,10 @@ subprojects {
                 // CVE-2026-29062 / GHSA-6v53-7c9g-w56r — jackson-core nesting depth bypass
                 // GHSA-72hv-8253-57qq — jackson-core async parser number length bypass
                 // Spring Boot 4.0.0 BOM → 3.0.2 (vulnerable). Fix: ≥ 3.1.0.
-                force("tools.jackson.core:jackson-core:3.1.0")
+                // NOTE: also added as a dependency constraint below so that
+                //       gradle/actions/dependency-submission reports 3.1.1 (not the
+                //       BOM-declared 3.0.2) in the submitted graph snapshot.
+                force("tools.jackson.core:jackson-core:3.1.1")
             }
         }
     }
@@ -94,6 +97,20 @@ subprojects {
         "implementation"(platform("org.springframework.ai:spring-ai-bom:${rootProject.ext["springAiVersion"]}"))
         "testImplementation"(platform("org.testcontainers:testcontainers-bom:${rootProject.ext["testcontainersVer"]}"))
 
+        // ── Security: explicit constraint overrides the Spring Boot BOM version.
+        // Using constraints (not only resolutionStrategy.force) ensures that
+        // gradle/actions/dependency-submission records the patched version in
+        // the dependency graph snapshot seen by dependency-review-action.
+        //
+        // CVE-2026-29062 / GHSA-6v53-7c9g-w56r + GHSA-72hv-8253-57qq
+        //   Spring Boot 4.0.0 BOM pins jackson-core 3.0.2 (vulnerable).
+        //   3.1.1 is the patched release on Maven Central.
+        //   TODO: remove once the Spring Boot BOM ships ≥ 3.1.1 directly.
+        constraints {
+            add("implementation", "tools.jackson.core:jackson-core:3.1.1") {
+                because("CVE-2026-29062 / GHSA-6v53-7c9g-w56r: nesting depth bypass fixed in 3.1.0+")
+            }
+        }
         // Lombok
         "compileOnly"("org.projectlombok:lombok:$lombokVersion")
         "annotationProcessor"("org.projectlombok:lombok:$lombokVersion")

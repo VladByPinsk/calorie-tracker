@@ -71,6 +71,15 @@ jobs:
           #   No patched GA release available as of 2026-04-04.
           #   TODO: remove once spring-ai-bom ≥ 1.1.3 ships and we upgrade.
           #
+          # GHSA-6v53-7c9g-w56r / CVE-2026-29062
+          #   "jackson-core nesting depth bypass in UTF8DataInputJsonParser"
+          #   Affects tools.jackson.core:jackson-core 3.0.x (fix: ≥ 3.1.0).
+          #   Patched in build via resolutionStrategy.force + constraints to 3.1.1.
+          #   Allowlisted because gradle/actions/dependency-submission reports the
+          #   BOM-declared version (3.0.2) in the graph snapshot rather than the
+          #   Gradle-resolved version (3.1.1). Runtime classpath IS on 3.1.1.
+          #   TODO: remove once Spring Boot BOM ships jackson-core ≥ 3.1.0 directly.
+          #
           # GHSA-8hfc-fq58-r658 / CVE-2026-22731
           #   "Spring Boot Authentication Bypass under Actuator Health group paths"
           #   Affects spring-boot-starter-actuator 4.0.0–4.0.2. No fix available.
@@ -113,5 +122,6 @@ jobs:
             GHSA-3qwq-q9vm-5j42,
             GHSA-fwxx-wv44-7qfg,
             GHSA-vqf4-7m7x-wgfc,
-            GHSA-cmp6-m4wj-q63q
+            GHSA-cmp6-m4wj-q63q,
+            GHSA-6v53-7c9g-w56r
 

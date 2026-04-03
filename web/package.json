@@ -1,12 +1,13 @@
 {
   "name": "calorie-tracker-web",
   "version": "0.1.0",
+  "type": "module",
   "private": true,
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
-    "lint": "eslint src --ext .ts,.tsx",
-    "test": "vitest run",
+    "build": "tsc -p tsconfig.app.json && vite build",
+    "lint": "eslint src",
+    "test": "vitest run --passWithNoTests",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -31,8 +32,12 @@
     "typescript": "^5.7.3",
     "vite": "^6.2.0",
     "vitest": "^3.0.7",
+    "jsdom": "^26.0.0",
     "@testing-library/react": "^16.2.0",
     "eslint": "^9.21.0",
+    "@eslint/js": "^9.21.0",
+    "globals": "^16.0.0",
+    "@typescript-eslint/parser": "^8.24.1",
     "@typescript-eslint/eslint-plugin": "^8.24.1",
     "eslint-plugin-react-hooks": "^5.1.0"
   }

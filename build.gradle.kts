@@ -1,18 +1,18 @@
 plugins {
     java
-    id("org.springframework.boot") version "3.4.4" apply false
+    id("org.springframework.boot") version "4.0.0" apply false
     id("io.spring.dependency-management") version "1.1.7" apply false
     id("com.google.cloud.tools.jib") version "3.4.4" apply false
 }
 
 // ─── Shared version constants (referenced in sub-projects via rootProject.ext) ─
 ext {
-    set("springBootVersion",  "3.4.4")
-    set("springCloudVersion", "2024.0.1")
-    set("springAiVersion",    "1.0.0-M6")
+    set("springBootVersion",  "4.0.0")
+    set("springCloudVersion", "2025.0.0")
+    set("springAiVersion",    "1.0.0")
     set("mapstructVersion",   "1.6.3")
     set("lombokVersion",      "1.18.36")
-    set("testcontainersVer",  "1.20.4")
+    set("testcontainersVer",  "1.21.0")
     set("flywayVersion",      "11.3.4")
     set("jwtVersion",         "0.12.6")
 }
@@ -25,9 +25,12 @@ subprojects {
     group = "com.calorietracker"
     version = "0.0.1-SNAPSHOT"
 
+    // Java 26 toolchain — Gradle auto-provisions Amazon Corretto 26 if not present
     java {
-        sourceCompatibility = JavaVersion.VERSION_26
-        targetCompatibility = JavaVersion.VERSION_26
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of(26))
+            vendor.set(JvmVendorSpec.AMAZON)
+        }
     }
 
     configurations {
@@ -66,4 +69,3 @@ subprojects {
         useJUnitPlatform()
     }
 }
-

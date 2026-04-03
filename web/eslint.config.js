@@ -2,6 +2,7 @@ import js from '@eslint/js'
 import tsPlugin from '@typescript-eslint/eslint-plugin'
 import tsParser from '@typescript-eslint/parser'
 import reactHooks from 'eslint-plugin-react-hooks'
+import globals from 'globals'
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
@@ -16,6 +17,9 @@ export default [
       parser: tsParser,
       parserOptions: {
         project: './tsconfig.app.json',
+      },
+      globals: {
+        ...globals.browser,
       },
     },
     rules: {

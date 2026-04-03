@@ -15,10 +15,23 @@ dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         mavenCentral()
-        // Spring Release repo: required for Spring Boot 4.0, Spring Cloud 2025.0,
-        // and Spring AI 1.0 artifacts that may not yet be fully mirrored on Maven Central
-        maven { url = uri("https://repo.spring.io/milestone") }
-        maven { url = uri("https://repo.spring.io/release") }
+        // Spring repos only for Spring-namespaced artifacts (Spring Boot 4, Spring Cloud 2025, Spring AI 1.0).
+        // Content filtering prevents non-Spring libs (bucket4j, minio, etc.) from hitting these
+        // repos and getting a 401.
+        maven {
+            url = uri("https://repo.spring.io/milestone")
+            content {
+                includeGroupByRegex("org\\.springframework.*")
+                includeGroupByRegex("io\\.spring.*")
+            }
+        }
+        maven {
+            url = uri("https://repo.spring.io/release")
+            content {
+                includeGroupByRegex("org\\.springframework.*")
+                includeGroupByRegex("io\\.spring.*")
+            }
+        }
     }
 }
 

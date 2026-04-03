@@ -59,14 +59,15 @@ subprojects {
 
                 // CVE-2026-33870 / GHSA-pwqr-wmgm-9rr8 — Netty HTTP/1.1 request smuggling
                 // CVE-2026-33871 / GHSA-w9fj-cfpg-grvv — Netty HTTP/2 CONTINUATION DoS
-                // Spring Boot 4.0.0 BOM → 4.2.7.Final (vulnerable). Fix: ≥ 4.2.8.Final.
-                force("io.netty:netty-codec-http:4.2.8.Final")
-                force("io.netty:netty-codec-http2:4.2.8.Final")
-                force("io.netty:netty-codec:4.2.8.Final")
-                force("io.netty:netty-handler:4.2.8.Final")
-                force("io.netty:netty-transport:4.2.8.Final")
-                force("io.netty:netty-common:4.2.8.Final")
-                force("io.netty:netty-buffer:4.2.8.Final")
+                // CVE database only tracks the 4.1.x fix (4.1.132.Final); the 4.2.x
+                // clean version is 4.2.12.Final (validated CVE-free). Fix: ≥ 4.2.12.Final.
+                force("io.netty:netty-codec-http:4.2.12.Final")
+                force("io.netty:netty-codec-http2:4.2.12.Final")
+                force("io.netty:netty-codec:4.2.12.Final")
+                force("io.netty:netty-handler:4.2.12.Final")
+                force("io.netty:netty-transport:4.2.12.Final")
+                force("io.netty:netty-common:4.2.12.Final")
+                force("io.netty:netty-buffer:4.2.12.Final")
 
                 // CVE-2025-48734 / GHSA-wxr5-93ph-8wr9 — commons-beanutils improper access
                 // Transitive via Spring Cloud Netflix. Fix: ≥ 1.11.0.
@@ -97,18 +98,49 @@ subprojects {
         "implementation"(platform("org.springframework.ai:spring-ai-bom:${rootProject.ext["springAiVersion"]}"))
         "testImplementation"(platform("org.testcontainers:testcontainers-bom:${rootProject.ext["testcontainersVer"]}"))
 
-        // ── Security: explicit constraint overrides the Spring Boot BOM version.
+        // ── Security: explicit constraints override BOM-declared versions.
         // Using constraints (not only resolutionStrategy.force) ensures that
         // gradle/actions/dependency-submission records the patched version in
         // the dependency graph snapshot seen by dependency-review-action.
-        //
-        // CVE-2026-29062 / GHSA-6v53-7c9g-w56r + GHSA-72hv-8253-57qq
-        //   Spring Boot 4.0.0 BOM pins jackson-core 3.0.2 (vulnerable).
-        //   3.1.1 is the patched release on Maven Central.
-        //   TODO: remove once the Spring Boot BOM ships ≥ 3.1.1 directly.
+        // TODO: remove each entry once the governing BOM ships the patched version.
         constraints {
+            // CVE-2026-29062 / GHSA-6v53-7c9g-w56r + GHSA-72hv-8253-57qq
+            // Spring Boot 4.0.0 BOM → jackson-core 3.0.2 (vulnerable). Fix: ≥ 3.1.0.
             add("implementation", "tools.jackson.core:jackson-core:3.1.1") {
                 because("CVE-2026-29062 / GHSA-6v53-7c9g-w56r: nesting depth bypass fixed in 3.1.0+")
+            }
+            // CVE-2025-48734 / GHSA-wxr5-93ph-8wr9
+            // BOM → commons-beanutils 1.9.4/1.10.1 (vulnerable). Fix: ≥ 1.11.0.
+            add("implementation", "commons-beanutils:commons-beanutils:1.11.0") {
+                because("CVE-2025-48734 / GHSA-wxr5-93ph-8wr9: ClassLoader access via enum fixed in 1.11.0")
+            }
+            // CVE-2025-67030 / GHSA-6fmv-xxpf-w3cw
+            // BOM → plexus-utils 3.3.0 (vulnerable). Fix: ≥ 4.0.3.
+            add("implementation", "org.codehaus.plexus:plexus-utils:4.0.3") {
+                because("CVE-2025-67030 / GHSA-6fmv-xxpf-w3cw: directory traversal in extractFile fixed in 4.0.3")
+            }
+            // CVE-2026-33870 / GHSA-pwqr-wmgm-9rr8 + CVE-2026-33871 / GHSA-w9fj-cfpg-grvv
+            // BOM → Netty 4.2.7.Final (vulnerable). Fix: ≥ 4.2.12.Final (CVE-free in 4.2.x).
+            add("implementation", "io.netty:netty-codec-http:4.2.12.Final") {
+                because("CVE-2026-33870 / GHSA-pwqr-wmgm-9rr8: HTTP request smuggling fixed in 4.2.12.Final")
+            }
+            add("implementation", "io.netty:netty-codec-http2:4.2.12.Final") {
+                because("CVE-2026-33871 / GHSA-w9fj-cfpg-grvv: HTTP/2 CONTINUATION DoS fixed in 4.2.12.Final")
+            }
+            add("implementation", "io.netty:netty-codec:4.2.12.Final") {
+                because("Netty version consistency with patched netty-codec-http/http2")
+            }
+            add("implementation", "io.netty:netty-handler:4.2.12.Final") {
+                because("Netty version consistency with patched netty-codec-http/http2")
+            }
+            add("implementation", "io.netty:netty-transport:4.2.12.Final") {
+                because("Netty version consistency with patched netty-codec-http/http2")
+            }
+            add("implementation", "io.netty:netty-common:4.2.12.Final") {
+                because("Netty version consistency with patched netty-codec-http/http2")
+            }
+            add("implementation", "io.netty:netty-buffer:4.2.12.Final") {
+                because("Netty version consistency with patched netty-codec-http/http2")
             }
         }
         // Lombok

@@ -80,6 +80,20 @@ jobs:
           #   Gradle-resolved version (3.1.1). Runtime classpath IS on 3.1.1.
           #   TODO: remove once Spring Boot BOM ships jackson-core ≥ 3.1.0 directly.
           #
+          # GHSA-wxr5-93ph-8wr9 / CVE-2025-48734
+          #   "Apache Commons BeanUtils improper access control"
+          #   Transitive via Spring Cloud Netflix. Fix: ≥ 1.11.0.
+          #   Patched via resolutionStrategy.force + constraint to 1.11.0.
+          #   Allowlisted because dependency-submission reports BOM-declared 1.10.1.
+          #   TODO: remove once the Spring Cloud BOM ships commons-beanutils ≥ 1.11.0.
+          #
+          # GHSA-6fmv-xxpf-w3cw / CVE-2025-67030
+          #   "Plexus-Utils directory traversal in extractFile"
+          #   Transitive via Spring Cloud. Fix: ≥ 4.0.3.
+          #   Patched via resolutionStrategy.force + constraint to 4.0.3.
+          #   Allowlisted because dependency-submission reports BOM-declared 3.3.0.
+          #   TODO: remove once the Spring Cloud BOM ships plexus-utils ≥ 4.0.3.
+          #
           # GHSA-8hfc-fq58-r658 / CVE-2026-22731
           #   "Spring Boot Authentication Bypass under Actuator Health group paths"
           #   Affects spring-boot-starter-actuator 4.0.0–4.0.2. No fix available.
@@ -117,6 +131,8 @@ jobs:
             GHSA-mf92-479x-3373,
             GHSA-fvh3-672c-7p6c,
             GHSA-rp9g-qx29-88cp,
+            GHSA-wxr5-93ph-8wr9,
+            GHSA-6fmv-xxpf-w3cw,
             GHSA-8hfc-fq58-r658,
             GHSA-mgvc-8q2h-5pgc,
             GHSA-3qwq-q9vm-5j42,

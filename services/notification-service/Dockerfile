@@ -1,5 +1,5 @@
 # Multi-stage build — keeps final image small
-FROM eclipse-temurin:21-jdk-alpine AS builder
+FROM eclipse-temurin:26-jdk-alpine AS builder
 WORKDIR /app
 COPY gradlew .
 COPY gradle gradle
@@ -10,7 +10,7 @@ COPY services/notification-service/build.gradle.kts services/notification-servic
 COPY services/notification-service/src services/notification-service/src
 RUN ./gradlew ::services:notification-service:bootJar --no-daemon -q
 
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:26-jre-alpine
 RUN addgroup -S spring && adduser -S spring -G spring
 USER spring
 WORKDIR /app

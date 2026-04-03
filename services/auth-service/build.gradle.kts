@@ -26,7 +26,7 @@ dependencies {
     implementation("dev.samstevens.totp:totp-spring-boot-starter:1.7.1")
     // Database
     runtimeOnly("org.postgresql:postgresql")
-    implementation("org.flywaydb:flyway-database-postgresql:${property("flywayVersion") ?: "11.3.4"}")
+    implementation("org.flywaydb:flyway-database-postgresql")
     // Observability
     implementation("io.micrometer:micrometer-registry-prometheus")
     implementation("io.micrometer:micrometer-tracing-bridge-brave")
@@ -38,7 +38,7 @@ dependencies {
 }
 
 jib {
-    from { image = "eclipse-temurin:21-jre-alpine" }
+    from { image = "eclipse-temurin:26-jre-alpine" }
     to   { image = "ghcr.io/vladbyPinsk/calorie-tracker/auth-service:${project.version}" }
 }
 

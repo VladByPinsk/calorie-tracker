@@ -25,6 +25,6 @@ dependencies {
 }
 
 jib {
-    from { image = "eclipse-temurin:21-jre-alpine" }
+    from { image = "eclipse-temurin:26-jre-alpine" }
     to   { image = "ghcr.io/VladByPinsk/calorie-tracker/notification-service:${project.version}" }
 }

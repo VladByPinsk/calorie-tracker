@@ -1,84 +1,123 @@
 #!/usr/bin/env bash
-# Sets up GitHub branch protection rules using GitHub CLI (gh).
-# Prerequisites: brew install gh && gh auth login
+# ─────────────────────────────────────────────────────────────────────────────
+# setup-branch-protection.sh
+#
+# Applies GitHub branch protection rules for calorie-tracker.
+# Run ONCE after the initial push to GitHub.
+#
+# Prerequisites:
+#   brew install gh
+#   gh auth login
+# ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
-REPO='VladByPinsk/calorie-tracker'
+REPO="VladByPinsk/calorie-tracker"
 
-echo '==> Setting up branch protection for: main'
+echo ""
+echo "══════════════════════════════════════════════════════════"
+echo "  Applying branch protection rules for: $REPO"
+echo "══════════════════════════════════════════════════════════"
 
-gh api \
-  --method PUT \
-  -H 'Accept: application/vnd.github+json' \
-  /repos/${REPO}/branches/main/protection \
-  --input - << 'JSON'
-{
-  "required_status_checks": {
-    "strict": true,
-    "contexts": [
-      "Test auth-service",
-      "Test user-service",
-      "Test food-service",
-      "Test diary-service",
-      "Test ai-service",
-      "Test analytics-service",
-      "Test notification-service",
-      "Test api-gateway",
-      "Test Web (React)",
-      "Test Mobile (Expo)",
-      "Test Infrastructure"
-    ]
-  },
-  "enforce_admins": true,
-  "required_pull_request_reviews": {
-    "dismiss_stale_reviews": true,
-    "require_code_owner_reviews": true,
-    "required_approving_review_count": 1,
-    "require_last_push_approval": true
-  },
-  "restrictions": null,
-  "allow_force_pushes": false,
-  "allow_deletions": false,
-  "block_creations": false,
-  "required_conversation_resolution": true,
-  "lock_branch": false,
-  "required_linear_history": true
-}
-JSON
+# ─── Helper: check gh is authenticated ────────────────────────────────────────
+if ! gh auth status &>/dev/null; then
+  echo "ERROR: Not authenticated. Run: gh auth login"
+  exit 1
+fi
 
-echo '==> Setting up branch protection for: develop'
+# ─────────────────────────────────────────────────────────────────────────────
+# MAIN branch — fully locked down
+# • No direct pushes (including admins)
+# • PR required with 1 approval from owner
+# • All CI checks must pass + branch must be up to date
+# • Linear history enforced (squash/rebase only — no merge commits)
+# ─────────────────────────────────────────────────────────────────────────────
+echo ""
+echo "→ Protecting: main"
 
 gh api \
   --method PUT \
-  -H 'Accept: application/vnd.github+json' \
-  /repos/${REPO}/branches/develop/protection \
-  --input - << 'JSON'
-{
-  "required_status_checks": {
-    "strict": true,
-    "contexts": [
-      "Test auth-service",
-      "Test user-service",
-      "Test food-service",
-      "Test diary-service",
-      "Test ai-service",
-      "Test analytics-service",
-      "Test notification-service",
-      "Test api-gateway",
-      "Test Web (React)",
-      "Test Mobile (Expo)"
-    ]
-  },
-  "enforce_admins": false,
-  "required_pull_request_reviews": {
-    "dismiss_stale_reviews": true,
-    "required_approving_review_count": 1
-  },
-  "restrictions": null,
-  "allow_force_pushes": false,
-  "allow_deletions": false,
-  "required_conversation_resolution": true
-}
-JSON
+  -H "Accept: application/vnd.github+json" \
+  -H "X-GitHub-Api-Version: 2022-11-28" \
+  "/repos/${REPO}/branches/main/protection" \
+  --field "required_status_checks[strict]=true" \
+  --field "required_status_checks[contexts][]=Test auth-service" \
+  --field "required_status_checks[contexts][]=Test user-service" \
+  --field "required_status_checks[contexts][]=Test food-service" \
+  --field "required_status_checks[contexts][]=Test diary-service" \
+  --field "required_status_checks[contexts][]=Test ai-service" \
+  --field "required_status_checks[contexts][]=Test analytics-service" \
+  --field "required_status_checks[contexts][]=Test notification-service" \
+  --field "required_status_checks[contexts][]=Test api-gateway" \
+  --field "required_status_checks[contexts][]=Test Web (React)" \
+  --field "required_status_checks[contexts][]=Test Mobile (Expo)" \
+  --field "required_status_checks[contexts][]=Test Infrastructure" \
+  --field "enforce_admins=true" \
+  --field "required_pull_request_reviews[dismiss_stale_reviews]=true" \
+  --field "required_pull_request_reviews[require_code_owner_reviews]=true" \
+  --field "required_pull_request_reviews[required_approving_review_count]=1" \
+  --field "required_pull_request_reviews[require_last_push_approval]=true" \
+  --field "restrictions=null" \
+  --field "allow_force_pushes=false" \
+  --field "allow_deletions=false" \
+  --field "required_conversation_resolution=true" \
+  --field "required_linear_history=true" \
+  --field "lock_branch=false"
 
-echo '==> Branch protection rules applied.'
+echo "  ✅ main protected"
+
+# Also enable squash merging only (disables merge commits + rebase)
+gh api \
+  --method PATCH \
+  -H "Accept: application/vnd.github+json" \
+  "/repos/${REPO}" \
+  --field "allow_squash_merge=true" \
+  --field "allow_merge_commit=false" \
+  --field "allow_rebase_merge=true" \
+  --field "delete_branch_on_merge=true" \
+  --field "squash_merge_commit_title=PR_TITLE" \
+  --field "squash_merge_commit_message=PR_BODY"
+
+echo "  ✅ Repo: squash+rebase merge only, delete branch on merge enabled"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DEVELOP branch — same rules, admin bypass allowed, linear history optional
+# ─────────────────────────────────────────────────────────────────────────────
+echo ""
+echo "→ Protecting: develop"
+
+gh api \
+  --method PUT \
+  -H "Accept: application/vnd.github+json" \
+  -H "X-GitHub-Api-Version: 2022-11-28" \
+  "/repos/${REPO}/branches/develop/protection" \
+  --field "required_status_checks[strict]=true" \
+  --field "required_status_checks[contexts][]=Test auth-service" \
+  --field "required_status_checks[contexts][]=Test user-service" \
+  --field "required_status_checks[contexts][]=Test food-service" \
+  --field "required_status_checks[contexts][]=Test diary-service" \
+  --field "required_status_checks[contexts][]=Test ai-service" \
+  --field "required_status_checks[contexts][]=Test analytics-service" \
+  --field "required_status_checks[contexts][]=Test notification-service" \
+  --field "required_status_checks[contexts][]=Test api-gateway" \
+  --field "required_status_checks[contexts][]=Test Web (React)" \
+  --field "required_status_checks[contexts][]=Test Mobile (Expo)" \
+  --field "enforce_admins=false" \
+  --field "required_pull_request_reviews[dismiss_stale_reviews]=true" \
+  --field "required_pull_request_reviews[required_approving_review_count]=1" \
+  --field "restrictions=null" \
+  --field "allow_force_pushes=false" \
+  --field "allow_deletions=false" \
+  --field "required_conversation_resolution=true" \
+  --field "required_linear_history=false"
+
+echo "  ✅ develop protected"
+
+# ─────────────────────────────────────────────────────────────────────────────
+echo ""
+echo "══════════════════════════════════════════════════════════"
+echo "  All branch protection rules applied successfully!"
+echo ""
+echo "  Verify at:"
+echo "  https://github.com/${REPO}/settings/branches"
+echo "══════════════════════════════════════════════════════════"
+echo ""

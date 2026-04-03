@@ -2,8 +2,6 @@
 .gradle/
 build/
 out/
-!gradle/wrapper/gradle-wrapper.jar
-!gradle/wrapper/gradle-wrapper.properties
 
 # ─── Java / Spring Boot ───────────────────────────────────────────────────────
 *.class
@@ -13,6 +11,10 @@ out/
 *.nar
 hs_err_pid*
 replay_pid*
+
+# Exception: Gradle wrapper jar MUST be committed so CI can bootstrap without installing Gradle
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
 
 # ─── IntelliJ IDEA ────────────────────────────────────────────────────────────
 .idea/

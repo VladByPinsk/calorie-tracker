@@ -15,6 +15,10 @@ dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         mavenCentral()
+        // Spring Release repo: required for Spring Boot 4.0, Spring Cloud 2025.0,
+        // and Spring AI 1.0 artifacts that may not yet be fully mirrored on Maven Central
+        maven { url = uri("https://repo.spring.io/milestone") }
+        maven { url = uri("https://repo.spring.io/release") }
     }
 }
 

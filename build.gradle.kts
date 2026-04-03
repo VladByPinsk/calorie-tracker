@@ -39,12 +39,47 @@ subprojects {
         compileOnly { extendsFrom(configurations.annotationProcessor.get()) }
         all {
             resolutionStrategy {
-                // CVE-2026-24400 / GHSA-rqfh-9r24-8c9r
-                // XXE in AssertJ XmlStringPrettyFormatter (isXmlEqualTo assertion).
-                // Spring Boot 4.0.0 BOM brings in 3.27.6 which is vulnerable.
-                // 3.27.7 is the patched release — force it across all configurations.
-                // TODO: remove this override once the Spring Boot BOM is updated.
+                // ── Dependency version overrides for known CVEs ──────────────────────
+                // Each entry overrides the version resolved by the Spring Boot / Spring Cloud
+                // BOM. Remove an entry once the BOM itself ships the patched version.
+
+                // CVE-2026-24400 / GHSA-rqfh-9r24-8c9r — AssertJ XXE in isXmlEqualTo
+                // Spring Boot 4.0.0 BOM → 3.27.6 (vulnerable). Fix: ≥ 3.27.7.
                 force("org.assertj:assertj-core:3.27.7")
+
+                // CVE-2026-24734 / GHSA-mgp5-rv84-w37q — Tomcat OCSP verification bypass
+                // Spring Boot 4.0.0 BOM → 11.0.14 (vulnerable). Fix: ≥ 11.0.18.
+                force("org.apache.tomcat.embed:tomcat-embed-core:11.0.18")
+                force("org.apache.tomcat.embed:tomcat-embed-websocket:11.0.18")
+                force("org.apache.tomcat.embed:tomcat-embed-el:11.0.18")
+
+                // CVE-2025-67030 / GHSA-6fmv-xxpf-w3cw — plexus-utils directory traversal
+                // Transitive via Spring Cloud / Netflix. Fix: ≥ 4.0.3.
+                force("org.codehaus.plexus:plexus-utils:4.0.3")
+
+                // CVE-2026-33870 / GHSA-pwqr-wmgm-9rr8 — Netty HTTP/1.1 request smuggling
+                // CVE-2026-33871 / GHSA-w9fj-cfpg-grvv — Netty HTTP/2 CONTINUATION DoS
+                // Spring Boot 4.0.0 BOM → 4.2.7.Final (vulnerable). Fix: ≥ 4.2.8.Final.
+                force("io.netty:netty-codec-http:4.2.8.Final")
+                force("io.netty:netty-codec-http2:4.2.8.Final")
+                force("io.netty:netty-codec:4.2.8.Final")
+                force("io.netty:netty-handler:4.2.8.Final")
+                force("io.netty:netty-transport:4.2.8.Final")
+                force("io.netty:netty-common:4.2.8.Final")
+                force("io.netty:netty-buffer:4.2.8.Final")
+
+                // CVE-2025-48734 / GHSA-wxr5-93ph-8wr9 — commons-beanutils improper access
+                // Transitive via Spring Cloud Netflix. Fix: ≥ 1.11.0.
+                force("commons-beanutils:commons-beanutils:1.11.0")
+
+                // CVE-2024-47072 / GHSA-hfq9-hggm-c56q — XStream DoS via stack overflow
+                // Transitive via Spring Cloud Config. Fix: ≥ 1.4.21.
+                force("com.thoughtworks.xstream:xstream:1.4.21")
+
+                // CVE-2026-29062 / GHSA-6v53-7c9g-w56r — jackson-core nesting depth bypass
+                // GHSA-72hv-8253-57qq — jackson-core async parser number length bypass
+                // Spring Boot 4.0.0 BOM → 3.0.2 (vulnerable). Fix: ≥ 3.1.0.
+                force("tools.jackson.core:jackson-core:3.1.0")
             }
         }
     }

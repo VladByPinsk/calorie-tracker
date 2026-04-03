@@ -1,0 +1,95 @@
+# Dependabot is FREE for all GitHub repositories (public & private).
+# It opens automatic PRs when dependencies have:
+#   • newer versions available (version updates)
+#   • known security vulnerabilities (security updates — always enabled)
+#
+# Docs: https://docs.github.com/en/code-security/dependabot
+
+version: 2
+updates:
+
+  # ── Java / Gradle ──────────────────────────────────────────────────────────
+  - package-ecosystem: "gradle"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Europe/Warsaw"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "java"
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      # Group all Spring Boot / Cloud / AI bumps into one PR
+      spring:
+        patterns:
+          - "org.springframework*"
+          - "io.spring*"
+      # Group all AWS / Testcontainers bumps
+      testcontainers:
+        patterns:
+          - "org.testcontainers*"
+
+  # ── Web frontend (React / Vite) ────────────────────────────────────────────
+  - package-ecosystem: "npm"
+    directory: "/web"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Europe/Warsaw"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "frontend"
+    commit-message:
+      prefix: "chore(deps-web)"
+
+  # ── Mobile (Expo / React Native) ───────────────────────────────────────────
+  - package-ecosystem: "npm"
+    directory: "/mobile"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Europe/Warsaw"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "mobile"
+    commit-message:
+      prefix: "chore(deps-mobile)"
+
+  # ── Docker base images ─────────────────────────────────────────────────────
+  - package-ecosystem: "docker"
+    directory: "/docker"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Europe/Warsaw"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "docker"
+    commit-message:
+      prefix: "chore(deps-docker)"
+
+  # ── GitHub Actions ─────────────────────────────────────────────────────────
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Europe/Warsaw"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "chore(deps-actions)"
+

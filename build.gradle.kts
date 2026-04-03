@@ -1,5 +1,7 @@
 plugins {
     java
+    checkstyle
+    jacoco
     id("org.springframework.boot") version "4.0.0" apply false
     id("com.google.cloud.tools.jib") version "3.4.4" apply false
 }
@@ -19,6 +21,8 @@ ext {
 // ─── Apply to ALL sub-projects ────────────────────────────────────────────────
 subprojects {
     apply(plugin = "java")
+    apply(plugin = "checkstyle")
+    apply(plugin = "jacoco")
 
     group = "com.calorietracker"
     version = "0.0.1-SNAPSHOT"
@@ -62,5 +66,45 @@ subprojects {
 
     tasks.withType<Test> {
         useJUnitPlatform()
+    }
+
+    // ── Checkstyle (Google style) ────────────────────────────────────────────
+    checkstyle {
+        toolVersion = "10.21.1"
+        configFile  = rootProject.file("config/checkstyle/checkstyle.xml")
+        isIgnoreFailures = false
+        maxWarnings = 0
+    }
+
+    // ── JaCoCo – code coverage ───────────────────────────────────────────────
+    jacoco {
+        toolVersion = "0.8.12"
+    }
+
+    tasks.named<JacocoReport>("jacocoTestReport") {
+        dependsOn(tasks.named("test"))
+        reports {
+            xml.required.set(true)   // consumed by SonarCloud / CI coverage tools
+            html.required.set(true)  // human-readable report in build/reports/jacoco/
+        }
+    }
+
+    tasks.named<JacocoCoverageVerification>("jacocoTestCoverageVerification") {
+        violationRules {
+            rule {
+                limit {
+                    // Minimum line coverage across the whole module.
+                    // Raise this gradually (70 → 75 → 80 …) as tests are added.
+                    minimum = "0.70".toBigDecimal()
+                }
+            }
+        }
+    }
+
+    // Run coverage verification as part of the standard `check` lifecycle.
+    // Order: checkstyleMain → checkstyleTest → test → jacocoTestReport → jacocoTestCoverageVerification
+    tasks.named("check") {
+        dependsOn(tasks.named("jacocoTestReport"))
+        dependsOn(tasks.named("jacocoTestCoverageVerification"))
     }
 }

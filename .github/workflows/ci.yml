@@ -69,8 +69,16 @@ jobs:
           distribution: corretto
           cache: gradle
 
-      - name: Run tests
-        run: ./gradlew :services:${{ matrix.service }}:test
+      - name: Run checks (Checkstyle + Tests + JaCoCo)
+        run: ./gradlew :services:${{ matrix.service }}:check
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.service }}
+          path: services/${{ matrix.service }}/build/reports/jacoco/test/html/
+          retention-days: 7
 
       - name: Build JAR
         run: ./gradlew :services:${{ matrix.service }}:bootJar
@@ -177,8 +185,8 @@ jobs:
           distribution: corretto
           cache: gradle
 
-      - run: ./gradlew :infrastructure:eureka-server:bootJar
-      - run: ./gradlew :infrastructure:config-server:bootJar
+      - run: ./gradlew :infrastructure:eureka-server:check
+      - run: ./gradlew :infrastructure:config-server:check
 
   # ─── Aggregator: single required status check for branch protection ────────
   # Skipped jobs count as success here — avoids "missing required check" blocks

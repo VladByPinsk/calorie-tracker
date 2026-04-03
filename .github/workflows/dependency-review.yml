@@ -1,0 +1,37 @@
+name: Dependency Review
+
+# Runs on every PR targeting main.
+# Blocks the merge if any newly added dependency has a known CVE
+# rated HIGH or CRITICAL (CVSS ≥ 7.0).
+#
+# Uses GitHub's built-in dependency graph — no extra tokens needed.
+# This action is FREE for all repositories.
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write   # needed to post the summary comment on the PR
+
+jobs:
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          # Fail the PR if any added dependency has a CVE with CVSS score ≥ 7
+          fail-on-severity: high
+          # Post a detailed comment on the PR listing all findings
+          comment-summary-in-pr: always
+          # Warn (but don't block) on packages with known malware
+          deny-packages: ""
+          # Optional: allow specific advisories if you consciously accept the risk
+          # allow-ghsas: GHSA-xxxx-xxxx-xxxx
+

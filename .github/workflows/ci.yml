@@ -58,11 +58,11 @@ jobs:
         with:
           node-version: '22'
           cache: npm
-          cache-dependency-path: web/package-lock.json
+          cache-dependency-path: web/package.json
 
-      - run: npm ci
+      - run: npm install
       - run: npm run lint
-      - run: npm test -- --watchAll=false --passWithNoTests
+      - run: npm test
       - run: npm run build
 
   # ─── Lint: Mobile (Expo) ────────────────────────────────────────────────────
@@ -79,9 +79,9 @@ jobs:
         with:
           node-version: '22'
           cache: npm
-          cache-dependency-path: mobile/package-lock.json
+          cache-dependency-path: mobile/package.json
 
-      - run: npm ci
+      - run: npm install
       - run: npm run lint
       - run: npx expo export --platform web
 

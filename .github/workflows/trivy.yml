@@ -31,7 +31,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Run Trivy filesystem scan
-        uses: aquasecurity/trivy-action@0.24.0
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           scan-type:  fs
           scan-ref:   .
@@ -84,7 +84,7 @@ jobs:
             -Djib.to.image=calorie-tracker/${{ matrix.service }}:scan
 
       - name: Run Trivy image scan
-        uses: aquasecurity/trivy-action@0.24.0
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           scan-type:  image
           image-ref:  calorie-tracker/${{ matrix.service }}:scan
@@ -99,4 +99,6 @@ jobs:
         with:
           sarif_file: trivy-image-${{ matrix.service }}.sarif
           category:   trivy-image-${{ matrix.service }}
+
+
 

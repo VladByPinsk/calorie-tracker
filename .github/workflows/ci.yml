@@ -192,12 +192,12 @@ jobs:
   # Generates a dependency snapshot and uploads it to GitHub's dependency graph.
   # Required by the dependency-review-action — without a snapshot for the head
   # SHA it has nothing to diff and reports "No snapshots were found".
-  # Runs on every push and PR so both base and head always have a snapshot.
+  #
+  # Runs unconditionally on every push/PR (no file-change filter) so that
+  # EVERY head SHA has a snapshot, not only those that touch Java files.
   submit-dependency-graph:
     name: Submit dependency graph
     runs-on: ubuntu-latest
-    needs: changes
-    if: needs.changes.outputs.java == 'true'
     permissions:
       contents: write   # needed to upload the dependency snapshot
     steps:
@@ -234,6 +234,7 @@ jobs:
             fi
           done
           echo "✅ All jobs passed or were skipped"
+
 
 
 

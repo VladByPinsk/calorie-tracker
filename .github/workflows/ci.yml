@@ -69,8 +69,16 @@ jobs:
           distribution: corretto
           cache: gradle
 
-      - name: Run tests
-        run: ./gradlew :services:${{ matrix.service }}:test
+      - name: Run checks (Checkstyle + Tests + JaCoCo)
+        run: ./gradlew :services:${{ matrix.service }}:check
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.service }}
+          path: services/${{ matrix.service }}/build/reports/jacoco/test/html/
+          retention-days: 7
 
       - name: Build JAR
         run: ./gradlew :services:${{ matrix.service }}:bootJar
@@ -177,8 +185,30 @@ jobs:
           distribution: corretto
           cache: gradle
 
-      - run: ./gradlew :infrastructure:eureka-server:bootJar
-      - run: ./gradlew :infrastructure:config-server:bootJar
+      - run: ./gradlew :infrastructure:eureka-server:check
+      - run: ./gradlew :infrastructure:config-server:check
+
+  # ─── Submit Gradle dependency graph ───────────────────────────────────────
+  # Generates a dependency snapshot and uploads it to GitHub's dependency graph.
+  # Required by the dependency-review-action — without a snapshot for the head
+  # SHA it has nothing to diff and reports "No snapshots were found".
+  #
+  # Runs unconditionally on every push/PR (no file-change filter) so that
+  # EVERY head SHA has a snapshot, not only those that touch Java files.
+  submit-dependency-graph:
+    name: Submit dependency graph
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # needed to upload the dependency snapshot
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '26'
+          distribution: corretto
+          cache: gradle
+      - name: Submit Gradle dependency graph
+        uses: gradle/actions/dependency-submission@v4
 
   # ─── Aggregator: single required status check for branch protection ────────
   # Skipped jobs count as success here — avoids "missing required check" blocks
@@ -204,4 +234,7 @@ jobs:
             fi
           done
           echo "✅ All jobs passed or were skipped"
+
+
+
 

@@ -1,5 +1,7 @@
 plugins {
     java
+    checkstyle
+    jacoco
     id("org.springframework.boot") version "4.0.0" apply false
     id("com.google.cloud.tools.jib") version "3.4.4" apply false
 }
@@ -19,6 +21,8 @@ ext {
 // ─── Apply to ALL sub-projects ────────────────────────────────────────────────
 subprojects {
     apply(plugin = "java")
+    apply(plugin = "checkstyle")
+    apply(plugin = "jacoco")
 
     group = "com.calorietracker"
     version = "0.0.1-SNAPSHOT"
@@ -33,6 +37,55 @@ subprojects {
 
     configurations {
         compileOnly { extendsFrom(configurations.annotationProcessor.get()) }
+        all {
+            resolutionStrategy {
+                // ── Dependency version overrides for known CVEs ──────────────────────
+                // Each entry overrides the version resolved by the Spring Boot / Spring Cloud
+                // BOM. Remove an entry once the BOM itself ships the patched version.
+
+                // CVE-2026-24400 / GHSA-rqfh-9r24-8c9r — AssertJ XXE in isXmlEqualTo
+                // Spring Boot 4.0.0 BOM → 3.27.6 (vulnerable). Fix: ≥ 3.27.7.
+                force("org.assertj:assertj-core:3.27.7")
+
+                // CVE-2026-24734 / GHSA-mgp5-rv84-w37q — Tomcat OCSP verification bypass
+                // Spring Boot 4.0.0 BOM → 11.0.14 (vulnerable). Fix: ≥ 11.0.18.
+                force("org.apache.tomcat.embed:tomcat-embed-core:11.0.18")
+                force("org.apache.tomcat.embed:tomcat-embed-websocket:11.0.18")
+                force("org.apache.tomcat.embed:tomcat-embed-el:11.0.18")
+
+                // CVE-2025-67030 / GHSA-6fmv-xxpf-w3cw — plexus-utils directory traversal
+                // Transitive via Spring Cloud / Netflix. Fix: ≥ 4.0.3.
+                force("org.codehaus.plexus:plexus-utils:4.0.3")
+
+                // CVE-2026-33870 / GHSA-pwqr-wmgm-9rr8 — Netty HTTP/1.1 request smuggling
+                // CVE-2026-33871 / GHSA-w9fj-cfpg-grvv — Netty HTTP/2 CONTINUATION DoS
+                // CVE database only tracks the 4.1.x fix (4.1.132.Final); the 4.2.x
+                // clean version is 4.2.12.Final (validated CVE-free). Fix: ≥ 4.2.12.Final.
+                force("io.netty:netty-codec-http:4.2.12.Final")
+                force("io.netty:netty-codec-http2:4.2.12.Final")
+                force("io.netty:netty-codec:4.2.12.Final")
+                force("io.netty:netty-handler:4.2.12.Final")
+                force("io.netty:netty-transport:4.2.12.Final")
+                force("io.netty:netty-common:4.2.12.Final")
+                force("io.netty:netty-buffer:4.2.12.Final")
+
+                // CVE-2025-48734 / GHSA-wxr5-93ph-8wr9 — commons-beanutils improper access
+                // Transitive via Spring Cloud Netflix. Fix: ≥ 1.11.0.
+                force("commons-beanutils:commons-beanutils:1.11.0")
+
+                // CVE-2024-47072 / GHSA-hfq9-hggm-c56q — XStream DoS via stack overflow
+                // Transitive via Spring Cloud Config. Fix: ≥ 1.4.21.
+                force("com.thoughtworks.xstream:xstream:1.4.21")
+
+                // CVE-2026-29062 / GHSA-6v53-7c9g-w56r — jackson-core nesting depth bypass
+                // GHSA-72hv-8253-57qq — jackson-core async parser number length bypass
+                // Spring Boot 4.0.0 BOM → 3.0.2 (vulnerable). Fix: ≥ 3.1.0.
+                // NOTE: also added as a dependency constraint below so that
+                //       gradle/actions/dependency-submission reports 3.1.1 (not the
+                //       BOM-declared 3.0.2) in the submitted graph snapshot.
+                force("tools.jackson.core:jackson-core:3.1.1")
+            }
+        }
     }
 
     dependencies {
@@ -45,6 +98,51 @@ subprojects {
         "implementation"(platform("org.springframework.ai:spring-ai-bom:${rootProject.ext["springAiVersion"]}"))
         "testImplementation"(platform("org.testcontainers:testcontainers-bom:${rootProject.ext["testcontainersVer"]}"))
 
+        // ── Security: explicit constraints override BOM-declared versions.
+        // Using constraints (not only resolutionStrategy.force) ensures that
+        // gradle/actions/dependency-submission records the patched version in
+        // the dependency graph snapshot seen by dependency-review-action.
+        // TODO: remove each entry once the governing BOM ships the patched version.
+        constraints {
+            // CVE-2026-29062 / GHSA-6v53-7c9g-w56r + GHSA-72hv-8253-57qq
+            // Spring Boot 4.0.0 BOM → jackson-core 3.0.2 (vulnerable). Fix: ≥ 3.1.0.
+            add("implementation", "tools.jackson.core:jackson-core:3.1.1") {
+                because("CVE-2026-29062 / GHSA-6v53-7c9g-w56r: nesting depth bypass fixed in 3.1.0+")
+            }
+            // CVE-2025-48734 / GHSA-wxr5-93ph-8wr9
+            // BOM → commons-beanutils 1.9.4/1.10.1 (vulnerable). Fix: ≥ 1.11.0.
+            add("implementation", "commons-beanutils:commons-beanutils:1.11.0") {
+                because("CVE-2025-48734 / GHSA-wxr5-93ph-8wr9: ClassLoader access via enum fixed in 1.11.0")
+            }
+            // CVE-2025-67030 / GHSA-6fmv-xxpf-w3cw
+            // BOM → plexus-utils 3.3.0 (vulnerable). Fix: ≥ 4.0.3.
+            add("implementation", "org.codehaus.plexus:plexus-utils:4.0.3") {
+                because("CVE-2025-67030 / GHSA-6fmv-xxpf-w3cw: directory traversal in extractFile fixed in 4.0.3")
+            }
+            // CVE-2026-33870 / GHSA-pwqr-wmgm-9rr8 + CVE-2026-33871 / GHSA-w9fj-cfpg-grvv
+            // BOM → Netty 4.2.7.Final (vulnerable). Fix: ≥ 4.2.12.Final (CVE-free in 4.2.x).
+            add("implementation", "io.netty:netty-codec-http:4.2.12.Final") {
+                because("CVE-2026-33870 / GHSA-pwqr-wmgm-9rr8: HTTP request smuggling fixed in 4.2.12.Final")
+            }
+            add("implementation", "io.netty:netty-codec-http2:4.2.12.Final") {
+                because("CVE-2026-33871 / GHSA-w9fj-cfpg-grvv: HTTP/2 CONTINUATION DoS fixed in 4.2.12.Final")
+            }
+            add("implementation", "io.netty:netty-codec:4.2.12.Final") {
+                because("Netty version consistency with patched netty-codec-http/http2")
+            }
+            add("implementation", "io.netty:netty-handler:4.2.12.Final") {
+                because("Netty version consistency with patched netty-codec-http/http2")
+            }
+            add("implementation", "io.netty:netty-transport:4.2.12.Final") {
+                because("Netty version consistency with patched netty-codec-http/http2")
+            }
+            add("implementation", "io.netty:netty-common:4.2.12.Final") {
+                because("Netty version consistency with patched netty-codec-http/http2")
+            }
+            add("implementation", "io.netty:netty-buffer:4.2.12.Final") {
+                because("Netty version consistency with patched netty-codec-http/http2")
+            }
+        }
         // Lombok
         "compileOnly"("org.projectlombok:lombok:$lombokVersion")
         "annotationProcessor"("org.projectlombok:lombok:$lombokVersion")
@@ -62,5 +160,61 @@ subprojects {
 
     tasks.withType<Test> {
         useJUnitPlatform()
+    }
+
+    // ── Checkstyle (official Google checks — read directly from the Checkstyle jar) ──
+    // google_checks.xml is bundled inside the Checkstyle tool jar itself.
+    // Referencing it this way means we always use the canonical, unmodified
+    // Google Java Style config that ships with the chosen toolVersion —
+    // no local copy that can drift or be accidentally modified.
+    checkstyle {
+        toolVersion = "10.21.1"
+        config = resources.text.fromArchiveEntry(
+            configurations.getByName("checkstyle").resolvedConfiguration
+                .resolvedArtifacts.first { it.name == "checkstyle" }.file,
+            "google_checks.xml"
+        )
+        isIgnoreFailures = false
+        maxWarnings = 0
+    }
+
+    // Exclude generated / trivial sources from Checkstyle analysis.
+    // MapStruct generates *MapperImpl.java files that are not hand-written code.
+    // *Application.java classes are one-liner Spring Boot entry points.
+    tasks.withType<Checkstyle> {
+        exclude("**/*MapperImpl.java")
+        exclude("**/*Application.java")
+    }
+
+    // ── JaCoCo – code coverage ───────────────────────────────────────────────
+    jacoco {
+        toolVersion = "0.8.12"
+    }
+
+    tasks.named<JacocoReport>("jacocoTestReport") {
+        dependsOn(tasks.named("test"))
+        reports {
+            xml.required.set(true)   // consumed by SonarCloud / CI coverage tools
+            html.required.set(true)  // human-readable report in build/reports/jacoco/
+        }
+    }
+
+    tasks.named<JacocoCoverageVerification>("jacocoTestCoverageVerification") {
+        violationRules {
+            rule {
+                limit {
+                    // Minimum line coverage across the whole module.
+                    // Raise this gradually (70 → 75 → 80 …) as tests are added.
+                    minimum = "0.70".toBigDecimal()
+                }
+            }
+        }
+    }
+
+    // Run coverage verification as part of the standard `check` lifecycle.
+    // Order: checkstyleMain → checkstyleTest → test → jacocoTestReport → jacocoTestCoverageVerification
+    tasks.named("check") {
+        dependsOn(tasks.named("jacocoTestReport"))
+        dependsOn(tasks.named("jacocoTestCoverageVerification"))
     }
 }

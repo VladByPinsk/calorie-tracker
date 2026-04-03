@@ -1,0 +1,58 @@
+name: CodeQL Security Analysis
+
+# FREE for all public repositories — part of GitHub Advanced Security.
+# Scans Java, TypeScript and JavaScript for security vulnerabilities
+# and code quality issues using CodeQL's security-and-quality query suite.
+#
+# build-mode: none  — CodeQL 2.x analyses Java/Kotlin source files directly
+#   without compiling. This is the recommended mode for complex multi-module
+#   Gradle projects. It avoids build-tracing failures while still detecting
+#   injection flaws, XXE, path traversal, crypto misuse, and more.
+#
+# Results appear in:
+#   Repository → Security → Code scanning alerts
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 2 * * 1'   # full weekly scan — catches new CVEs in existing code
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write   # upload SARIF results to GitHub Security tab
+      actions:  read
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: java-kotlin
+            build-mode: none   # source-only — no compilation tracing needed
+          - language: javascript-typescript
+            build-mode: none   # autobuild not supported in CodeQL 2.x for JS/TS
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialise CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          queries: security-and-quality
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: /language:${{ matrix.language }}
+          upload: always
+
+

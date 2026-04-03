@@ -1,0 +1,126 @@
+name: Deploy
+
+# Two-stage deployment pipeline:
+#
+#   main push ──► staging (automatic)
+#             ──► production (requires manual approval in GitHub Environments)
+#
+# GitHub Environments configuration (one-time, in the GitHub UI):
+#   Repository → Settings → Environments:
+#     staging:    no protection rules (auto-deploys)
+#     production: required reviewer = VladByPinsk, wait-timer = 0 min
+#
+# This models the real-world pattern:
+#   feature branch → PR → main → staging → [approval] → production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Target environment'
+        required: true
+        default: staging
+        type: choice
+        options: [staging, production]
+
+jobs:
+  # ── 1. Staging: runs automatically on every push to main ─────────────────
+  deploy-staging:
+    name: Deploy → Staging
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging.calorie-tracker.example.com   # replace with real URL
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull latest images
+        run: |
+          for svc in auth-service user-service food-service diary-service \
+                     ai-service analytics-service notification-service api-gateway; do
+            docker pull ghcr.io/${{ github.repository_owner }}/calorie-tracker/${svc}:latest || true
+          done
+
+      - name: Deploy to staging via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host:     ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_USER }}
+          key:      ${{ secrets.STAGING_SSH_KEY }}
+          script: |
+            cd /opt/calorie-tracker
+            git pull origin main
+            docker compose -f docker/docker-compose.yml pull
+            docker compose -f docker/docker-compose.yml up -d --remove-orphans
+            docker system prune -f
+
+      - name: Smoke test staging
+        run: |
+          sleep 15
+          curl --fail --retry 5 --retry-delay 5 \
+            https://staging.calorie-tracker.example.com/actuator/health \
+            || (echo "Staging health check failed"; exit 1)
+
+  # ── 2. Production: waits for manual approval (configured in Environments) ─
+  deploy-production:
+    name: Deploy → Production
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://calorie-tracker.example.com   # replace with real URL
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy to production via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host:     ${{ secrets.PRODUCTION_HOST }}
+          username: ${{ secrets.PRODUCTION_USER }}
+          key:      ${{ secrets.PRODUCTION_SSH_KEY }}
+          script: |
+            cd /opt/calorie-tracker
+            git pull origin main
+            docker compose -f docker/docker-compose.yml pull
+            # Rolling restart: bring up new containers before removing old ones
+            docker compose -f docker/docker-compose.yml up -d --no-deps --remove-orphans
+            docker system prune -f
+
+      - name: Smoke test production
+        run: |
+          sleep 15
+          curl --fail --retry 5 --retry-delay 5 \
+            https://calorie-tracker.example.com/actuator/health \
+            || (echo "Production health check failed"; exit 1)
+
+      - name: Create deployment annotation in Grafana
+        env:
+          GRAFANA_URL: ${{ secrets.GRAFANA_URL }}
+          GRAFANA_TOKEN: ${{ secrets.GRAFANA_TOKEN }}
+        run: |
+          curl -s -X POST "${GRAFANA_URL}/api/annotations" \
+            -H "Authorization: Bearer ${GRAFANA_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"text\": \"Production deploy: ${{ github.sha }} by ${{ github.actor }}\",
+              \"tags\": [\"deployment\", \"production\"]
+            }" || true
+

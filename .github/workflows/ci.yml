@@ -90,8 +90,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: npm
-          cache-dependency-path: web/package.json
 
       - run: npm install
       - run: npm run lint
@@ -113,8 +111,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: npm
-          cache-dependency-path: mobile/package.json
 
       - run: npm install
       - run: npm run lint

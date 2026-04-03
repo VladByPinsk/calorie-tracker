@@ -40,6 +40,10 @@ fi
 
 REMOTE_WITH_TOKEN="https://${OWNER}:${TOKEN}@github.com/${REPO}.git"
 
+# Always restore the clean remote URL on exit so the PAT is never left
+# in .git/config if the script is interrupted or exits with an error.
+trap 'git remote set-url origin "$CLEAN_REMOTE" 2>/dev/null || true' EXIT
+
 # ─── Helper: GitHub API ───────────────────────────────────────────────────────
 gh_api() {
   local method="$1" path="$2" data="${3:-}"

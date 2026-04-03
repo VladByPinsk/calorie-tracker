@@ -36,6 +36,10 @@ COMMAND="${2:-push-and-protect}"
 REMOTE_WITH_TOKEN="https://${OWNER}:${TOKEN}@github.com/${REPO}.git"
 CLEAN_REMOTE="https://github.com/${REPO}.git"
 
+# Always restore the clean remote URL on exit so the PAT is never left
+# in .git/config if the script is interrupted or exits with an error.
+trap 'git remote set-url origin "$CLEAN_REMOTE" 2>/dev/null || true' EXIT
+
 # ─── Helper: push a branch using token, then clean remote URL ─────────────────
 push_branch() {
   local branch="$1"
@@ -47,7 +51,7 @@ push_branch() {
 # ─── Helper: GitHub API call ─────────────────────────────────────────────────
 gh_api() {
   local method="$1" path="$2" data="$3"
-  curl -s -X "$method" \
+  curl -s --fail-with-body -X "$method" \
     -H "Authorization: Bearer ${TOKEN}" \
     -H "Accept: application/vnd.github+json" \
     -H "X-GitHub-Api-Version: 2022-11-28" \

@@ -15,22 +15,26 @@ BRANCH="test/verify-branch-protection"
 BASE="main"
 CLEAN_REMOTE="https://github.com/${REPO}.git"
 
-# ─── 1. Ask for PAT via native macOS dialog (no terminal blocking) ────────────
-TOKEN=$(osascript -e '
-  tell application "System Events"
-    activate
-    set result to text returned of (display dialog "Enter your GitHub Personal Access Token (PAT)\n\nNeeds scopes: repo + workflow\nGet one at: github.com/settings/tokens/new" ¬
-      default answer "" ¬
-      with hidden answer ¬
-      buttons {"Cancel", "OK"} ¬
-      default button "OK" ¬
-      with title "calorie-tracker — GitHub PAT")
-  end tell
-  return result
-' 2>/dev/null)
+# ─── 1. Get PAT — env var first, then macOS dialog ───────────────────────────
+TOKEN="${GH_TOKEN:-}"
 
 if [[ -z "$TOKEN" ]]; then
-  echo "❌ No token entered. Exiting."
+  TOKEN=$(osascript -e '
+    tell application "System Events"
+      activate
+      set result to text returned of (display dialog "Enter your GitHub Personal Access Token (PAT)\n\nNeeds scopes: repo + workflow\nGet one at: github.com/settings/tokens/new\n\nTip: set GH_TOKEN env var to skip this dialog next time." ¬
+        default answer "" ¬
+        with hidden answer ¬
+        buttons {"Cancel", "OK"} ¬
+        default button "OK" ¬
+        with title "calorie-tracker — GitHub PAT")
+    end tell
+    return result
+  ' 2>/dev/null)
+fi
+
+if [[ -z "$TOKEN" ]]; then
+  echo "❌ No token provided. Set GH_TOKEN env var or enter in the dialog."
   exit 1
 fi
 
@@ -130,4 +134,5 @@ else
   echo "  • All 11 CI status checks pending"
   echo "══════════════════════════════════════════════════════════"
 fi
+
 

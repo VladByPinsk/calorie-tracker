@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "calorie-tracker-mobile",
+    "slug": "calorie-tracker-mobile",
+    "version": "1.0.0",
+    "scheme": "calorietracker",
+    "platforms": ["ios", "android", "web"],
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    }
+  }
+}
+

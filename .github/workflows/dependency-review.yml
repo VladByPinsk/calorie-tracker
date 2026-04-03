@@ -12,7 +12,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  contents:      write   # write needed for gradle/actions/dependency-submission
   pull-requests: write   # needed to post the summary comment on the PR
 
 jobs:
@@ -23,15 +23,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Submit the Gradle dependency snapshot for this exact HEAD SHA
+      # BEFORE the review action runs. This fixes "No snapshots were found"
+      # which happens when dependency-review.yml and ci.yml race each other —
+      # both trigger on pull_request simultaneously and the ci.yml submission
+      # job may not finish before the review action checks for the snapshot.
+      - name: Set up Java 26
+        uses: actions/setup-java@v4
+        with:
+          java-version: '26'
+          distribution: corretto
+          cache: gradle
+
+      - name: Submit Gradle dependency snapshot
+        uses: gradle/actions/dependency-submission@v4
+
       - name: Dependency Review
         uses: actions/dependency-review-action@v4
         with:
-          # Fail the PR if any added dependency has a CVE with CVSS score ≥ 7
           fail-on-severity: high
-          # Post a detailed comment on the PR listing all findings
           comment-summary-in-pr: always
-          # Warn (but don't block) on packages with known malware
-          deny-packages: ""
-          # Optional: allow specific advisories if you consciously accept the risk
-          # allow-ghsas: GHSA-xxxx-xxxx-xxxx
 

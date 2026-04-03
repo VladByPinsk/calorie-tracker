@@ -40,17 +40,7 @@ gh api \
   -H "X-GitHub-Api-Version: 2022-11-28" \
   "/repos/${REPO}/branches/main/protection" \
   --field "required_status_checks[strict]=true" \
-  --field "required_status_checks[contexts][]=Test auth-service" \
-  --field "required_status_checks[contexts][]=Test user-service" \
-  --field "required_status_checks[contexts][]=Test food-service" \
-  --field "required_status_checks[contexts][]=Test diary-service" \
-  --field "required_status_checks[contexts][]=Test ai-service" \
-  --field "required_status_checks[contexts][]=Test analytics-service" \
-  --field "required_status_checks[contexts][]=Test notification-service" \
-  --field "required_status_checks[contexts][]=Test api-gateway" \
-  --field "required_status_checks[contexts][]=Test Web (React)" \
-  --field "required_status_checks[contexts][]=Test Mobile (Expo)" \
-  --field "required_status_checks[contexts][]=Test Infrastructure" \
+  --field "required_status_checks[contexts][]=CI" \
   --field "enforce_admins=true" \
   --field "required_pull_request_reviews[dismiss_stale_reviews]=true" \
   --field "required_pull_request_reviews[require_code_owner_reviews]=true" \
@@ -92,16 +82,7 @@ gh api \
   -H "X-GitHub-Api-Version: 2022-11-28" \
   "/repos/${REPO}/branches/develop/protection" \
   --field "required_status_checks[strict]=true" \
-  --field "required_status_checks[contexts][]=Test auth-service" \
-  --field "required_status_checks[contexts][]=Test user-service" \
-  --field "required_status_checks[contexts][]=Test food-service" \
-  --field "required_status_checks[contexts][]=Test diary-service" \
-  --field "required_status_checks[contexts][]=Test ai-service" \
-  --field "required_status_checks[contexts][]=Test analytics-service" \
-  --field "required_status_checks[contexts][]=Test notification-service" \
-  --field "required_status_checks[contexts][]=Test api-gateway" \
-  --field "required_status_checks[contexts][]=Test Web (React)" \
-  --field "required_status_checks[contexts][]=Test Mobile (Expo)" \
+  --field "required_status_checks[contexts][]=CI" \
   --field "enforce_admins=false" \
   --field "required_pull_request_reviews[dismiss_stale_reviews]=true" \
   --field "required_pull_request_reviews[required_approving_review_count]=1" \

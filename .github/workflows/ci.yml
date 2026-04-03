@@ -183,3 +183,29 @@ jobs:
 
       - run: ./gradlew :infrastructure:eureka-server:bootJar
       - run: ./gradlew :infrastructure:config-server:bootJar
+
+  # ─── Aggregator: single required status check for branch protection ────────
+  # Skipped jobs count as success here — avoids "missing required check" blocks
+  # when path filtering skips web/mobile/java jobs on unrelated changes.
+  ci-success:
+    name: CI
+    needs: [test-services, test-web, test-mobile, test-infrastructure]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check all jobs passed or were skipped
+        run: |
+          results=(
+            "${{ needs.test-services.result }}"
+            "${{ needs.test-web.result }}"
+            "${{ needs.test-mobile.result }}"
+            "${{ needs.test-infrastructure.result }}"
+          )
+          for r in "${results[@]}"; do
+            if [[ "$r" == "failure" || "$r" == "cancelled" ]]; then
+              echo "❌ A required job failed or was cancelled (result: $r)"
+              exit 1
+            fi
+          done
+          echo "✅ All jobs passed or were skipped"
+

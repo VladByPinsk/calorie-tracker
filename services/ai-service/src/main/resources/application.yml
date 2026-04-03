@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: ai-service
+  config:
+    import: optional:configserver:http://localhost:8888
+  ai:
+    ollama:
+      base-url: ${SPRING_AI_OLLAMA_BASE_URL:http://localhost:11434}
+      chat.model: gemma3:12b
+      embedding.model: nomic-embed-text
+  data:
+    redis.host: localhost
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+
+server:
+  port: 8085
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+management:
+  endpoints.web.exposure.include: health,info,prometheus,metrics
+  tracing.sampling.probability: 1.0
+  zipkin.tracing.endpoint: http://localhost:9411/api/v2/spans

@@ -1,0 +1,2 @@
+-- auth_db initial schema
+-- TODO: Add CREATE TABLE statements for auth service entities

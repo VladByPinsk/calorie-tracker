@@ -1,0 +1,2 @@
+-- notification_db initial schema
+-- TODO: Add CREATE TABLE statements for notification service entities

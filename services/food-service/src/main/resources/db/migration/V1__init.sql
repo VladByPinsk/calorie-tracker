@@ -1,0 +1,2 @@
+-- food_db initial schema
+-- TODO: Add CREATE TABLE statements for food service entities

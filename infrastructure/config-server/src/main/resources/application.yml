@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: config-server
+  cloud:
+    config:
+      server:
+        native:
+          search-locations: classpath:/config
+      # Switch to git backend in production:
+      # git:
+      #   uri: https://github.com/VladByPinsk/calorie-tracker-config
+  profiles.active: native
+
+server:
+  port: 8888
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/

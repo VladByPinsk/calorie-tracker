@@ -1,0 +1,2 @@
+-- diary_db initial schema
+-- TODO: Add CREATE TABLE statements for diary service entities

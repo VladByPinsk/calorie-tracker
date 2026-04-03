@@ -1,0 +1,8 @@
+# Global owner — all files require review
+* @VladByPinsk
+
+# Infrastructure changes require extra care
+docker/              @VladByPinsk
+.github/workflows/   @VladByPinsk
+infrastructure/      @VladByPinsk
+scripts/             @VladByPinsk

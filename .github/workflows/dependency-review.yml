@@ -43,12 +43,22 @@ jobs:
         with:
           fail-on-severity: high
           comment-summary-in-pr: always
-          # Disable OpenSSF Scorecard threshold warnings.
+
+          # ── OpenSSF Scorecard ──────────────────────────────────────────────
           # All flagged packages (lz4-java, kotlin-stdlib, aspectjweaver, etc.)
           # are transitive dependencies pulled in by Spring Boot / Spring Cloud /
           # Netflix Eureka — we cannot replace or upgrade them directly.
           # Low Scorecard scores reflect absent GitHub security hygiene in those
           # upstream repos (no branch protection, etc.), not actual CVEs.
-          # CVE blocking is still fully active via fail-on-severity: high above.
-          min-openssf-scorecard-score: 0
+          show-openssf-scorecard: false
+          warn-on-openssf-scorecard-level: 0
+
+          # ── Known-unpatched advisories ─────────────────────────────────────
+          # GHSA-mf92-479x-3373 / CVE-2026-22732
+          #   "Spring Security HTTP Headers Are not Written Under Some Conditions"
+          #   Affects spring-security-web 7.0.0–7.0.3 (via Spring Boot 4.0.0).
+          #   NO patched version is available yet (as of 2026-04-04).
+          #   TODO: remove this allowlist entry once spring-security-web ≥ 7.0.4
+          #   (or the Spring Boot BOM that includes it) is released and we upgrade.
+          allow-ghsas: GHSA-mf92-479x-3373
 

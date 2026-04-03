@@ -34,15 +34,14 @@ jobs:
       matrix:
         include:
           - language: java-kotlin
-            build-mode: none        # source-only — no compilation tracing needed
+            build-mode: none   # source-only — no compilation tracing needed
           - language: javascript-typescript
-            build-mode: autobuild   # CodeQL handles JS/TS without a build step
+            build-mode: none   # autobuild not supported in CodeQL 2.x for JS/TS
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # ── Initialise CodeQL database ─────────────────────────────────────────
       - name: Initialise CodeQL
         uses: github/codeql-action/init@v3
         with:
@@ -50,15 +49,10 @@ jobs:
           build-mode: ${{ matrix.build-mode }}
           queries: security-and-quality
 
-      # ── JS/TS only: autobuild (Java/Kotlin uses build-mode: none) ──────────
-      - name: AutoBuild (JS/TS only)
-        if: matrix.build-mode == 'autobuild'
-        uses: github/codeql-action/autobuild@v3
-
-      # ── Run analysis and upload SARIF to GitHub Security tab ──────────────
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
           category: /language:${{ matrix.language }}
           upload: always
+
 

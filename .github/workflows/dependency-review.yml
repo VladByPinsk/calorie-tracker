@@ -57,8 +57,21 @@ jobs:
           # GHSA-mf92-479x-3373 / CVE-2026-22732
           #   "Spring Security HTTP Headers Are not Written Under Some Conditions"
           #   Affects spring-security-web 7.0.0–7.0.3 (via Spring Boot 4.0.0).
-          #   NO patched version is available yet (as of 2026-04-04).
-          #   TODO: remove this allowlist entry once spring-security-web ≥ 7.0.4
-          #   (or the Spring Boot BOM that includes it) is released and we upgrade.
-          allow-ghsas: GHSA-mf92-479x-3373
+          #   TODO: remove once spring-security-web ≥ 7.0.4 ships.
+          #
+          # GHSA-fvh3-672c-7p6c / CVE-2026-22738
+          #   "Spring AI: SpEL injection via user-supplied filter expression key"
+          #   Affects spring-ai-vector-store 1.0.0–1.0.4 (fix: ≥ 1.0.5).
+          #   No patched GA release available as of 2026-04-04.
+          #   TODO: remove once spring-ai-bom ≥ 1.0.5 ships and we upgrade.
+          #
+          # GHSA-rp9g-qx29-88cp / CVE-2026-22729
+          #   "JSONPath Injection in Spring AI Vector Stores FilterExpressionConverter"
+          #   Affects spring-ai-vector-store 1.0.0–1.1.2 (fix: ≥ 1.1.3).
+          #   No patched GA release available as of 2026-04-04.
+          #   TODO: remove once spring-ai-bom ≥ 1.1.3 ships and we upgrade.
+          allow-ghsas: >-
+            GHSA-mf92-479x-3373,
+            GHSA-fvh3-672c-7p6c,
+            GHSA-rp9g-qx29-88cp
 

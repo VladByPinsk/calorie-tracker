@@ -1,0 +1,48 @@
+name: Copilot Code Review
+
+# Automatically requests a Copilot code review on every non-draft PR
+# that targets main.
+#
+# Pre-requisite (one-time, done in the GitHub UI):
+#   Repository → Settings → Copilot → Code review → Enable
+#
+# After that this workflow handles the automatic request so you never
+# have to click "Request a review from Copilot" manually.
+
+on:
+  pull_request:
+    types: [opened, ready_for_review]
+    branches: [main]
+
+permissions:
+  pull-requests: write   # needed to post the review request
+
+jobs:
+  request-copilot-review:
+    name: Request Copilot Review
+    runs-on: ubuntu-latest
+    # Never run on draft PRs — Copilot review is only useful on ready code
+    if: github.event.pull_request.draft == false
+    steps:
+      - name: Request Copilot code review
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+
+            try {
+              await github.rest.pulls.requestReviewers({
+                owner: context.repo.owner,
+                repo:  context.repo.repo,
+                pull_number: pr.number,
+                reviewers: ['copilot-pull-request-reviewer'],
+              });
+              core.info(`✅ Copilot review requested on PR #${pr.number}`);
+            } catch (err) {
+              // Not a fatal error — Copilot may not be enabled yet in Settings.
+              // Once enabled (Settings → Copilot → Code review) this will work
+              // automatically on every new PR without any further changes.
+              core.warning(`Copilot review request skipped: ${err.message}`);
+            }
+

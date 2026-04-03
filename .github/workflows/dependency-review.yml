@@ -43,4 +43,12 @@ jobs:
         with:
           fail-on-severity: high
           comment-summary-in-pr: always
+          # Disable OpenSSF Scorecard threshold warnings.
+          # All flagged packages (lz4-java, kotlin-stdlib, aspectjweaver, etc.)
+          # are transitive dependencies pulled in by Spring Boot / Spring Cloud /
+          # Netflix Eureka — we cannot replace or upgrade them directly.
+          # Low Scorecard scores reflect absent GitHub security hygiene in those
+          # upstream repos (no branch protection, etc.), not actual CVEs.
+          # CVE blocking is still fully active via fail-on-severity: high above.
+          min-openssf-scorecard-score: 0
 

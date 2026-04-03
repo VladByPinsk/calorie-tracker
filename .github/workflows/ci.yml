@@ -63,7 +63,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Java 26
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '26'
           distribution: corretto
@@ -151,7 +151,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Java 26
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '26'
           distribution: corretto
@@ -179,7 +179,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Java 26
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '26'
           distribution: corretto
@@ -202,7 +202,7 @@ jobs:
       contents: write   # needed to upload the dependency snapshot
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           java-version: '26'
           distribution: corretto

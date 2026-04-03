@@ -188,6 +188,28 @@ jobs:
       - run: ./gradlew :infrastructure:eureka-server:check
       - run: ./gradlew :infrastructure:config-server:check
 
+  # ─── Submit Gradle dependency graph ───────────────────────────────────────
+  # Generates a dependency snapshot and uploads it to GitHub's dependency graph.
+  # Required by the dependency-review-action — without a snapshot for the head
+  # SHA it has nothing to diff and reports "No snapshots were found".
+  # Runs on every push and PR so both base and head always have a snapshot.
+  submit-dependency-graph:
+    name: Submit dependency graph
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.java == 'true'
+    permissions:
+      contents: write   # needed to upload the dependency snapshot
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '26'
+          distribution: corretto
+          cache: gradle
+      - name: Submit Gradle dependency graph
+        uses: gradle/actions/dependency-submission@v4
+
   # ─── Aggregator: single required status check for branch protection ────────
   # Skipped jobs count as success here — avoids "missing required check" blocks
   # when path filtering skips web/mobile/java jobs on unrelated changes.
@@ -212,4 +234,6 @@ jobs:
             fi
           done
           echo "✅ All jobs passed or were skipped"
+
+
 

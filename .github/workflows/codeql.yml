@@ -4,6 +4,11 @@ name: CodeQL Security Analysis
 # Scans Java, TypeScript and JavaScript for security vulnerabilities
 # and code quality issues using CodeQL's security-and-quality query suite.
 #
+# build-mode: none  — CodeQL 2.x analyses Java/Kotlin source files directly
+#   without compiling. This is the recommended mode for complex multi-module
+#   Gradle projects. It avoids build-tracing failures while still detecting
+#   injection flaws, XXE, path traversal, crypto misuse, and more.
+#
 # Results appear in:
 #   Repository → Security → Code scanning alerts
 
@@ -13,8 +18,7 @@ on:
   pull_request:
     branches: [main]
   schedule:
-    # Full weekly scan every Monday at 02:00 UTC (catches new CVEs in existing code)
-    - cron: '0 2 * * 1'
+    - cron: '0 2 * * 1'   # full weekly scan — catches new CVEs in existing code
 
 jobs:
   analyze:
@@ -30,43 +34,25 @@ jobs:
       matrix:
         include:
           - language: java-kotlin
-            build-mode: manual   # we drive the build ourselves for multi-module Gradle
+            build-mode: none        # source-only — no compilation tracing needed
           - language: javascript-typescript
-            build-mode: autobuild
+            build-mode: autobuild   # CodeQL handles JS/TS without a build step
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      # ── Java: provision the JDK the project requires ───────────────────────
-      - name: Set up Java 26
-        if: matrix.language == 'java-kotlin'
-        uses: actions/setup-java@v4
-        with:
-          java-version: '26'
-          distribution: corretto
-          cache: gradle
 
       # ── Initialise CodeQL database ─────────────────────────────────────────
       - name: Initialise CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
-          # security-and-quality = security queries + additional quality checks
+          build-mode: ${{ matrix.build-mode }}
           queries: security-and-quality
 
-      # ── Build (Java only — CodeQL must see compilation) ────────────────────
-      - name: Build Java services for CodeQL
-        if: matrix.language == 'java-kotlin'
-        run: |
-          # Compile every service so CodeQL captures the full call graph.
-          # We skip tests here — CodeQL only needs class files, not test results.
-          ./gradlew --no-daemon compileJava compileTestJava \
-            -x test -x checkstyleMain -x checkstyleTest
-
-      # ── JavaScript/TypeScript: let CodeQL auto-build ───────────────────────
-      - name: AutoBuild (JS/TS)
-        if: matrix.language == 'javascript-typescript'
+      # ── JS/TS only: autobuild (Java/Kotlin uses build-mode: none) ──────────
+      - name: AutoBuild (JS/TS only)
+        if: matrix.build-mode == 'autobuild'
         uses: github/codeql-action/autobuild@v3
 
       # ── Run analysis and upload SARIF to GitHub Security tab ──────────────
@@ -74,6 +60,5 @@ jobs:
         uses: github/codeql-action/analyze@v3
         with:
           category: /language:${{ matrix.language }}
-          # Upload results even if some queries time out
           upload: always
 

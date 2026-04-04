@@ -8,7 +8,7 @@ plugins {
 
 // ─── Shared version constants (referenced in sub-projects via rootProject.ext) ─
 ext {
-    set("springBootVersion",  "4.0.0")
+    set("springBootVersion",  "4.0.5")
     set("springCloudVersion", "2025.0.0")
     set("springAiVersion",    "1.0.0")
     set("mapstructVersion",   "1.6.3")

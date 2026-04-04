@@ -14,7 +14,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
     <implementation("org.springframework.ai:spring-ai-ollama:1.1.4")
     implementation("org.springframework.ai:spring-ai-pgvector-store:1.1.4")
-    implementation("io.minio:minio:8.6.0")
+    implementation("io.minio:minio:9.0.0")
     implementation("io.micrometer:micrometer-registry-prometheus")
     implementation("io.micrometer:micrometer-tracing-bridge-brave")
     implementation("io.zipkin.reporter2:zipkin-reporter-brave")

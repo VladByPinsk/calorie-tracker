@@ -3,7 +3,7 @@ plugins {
     checkstyle
     jacoco
     id("org.springframework.boot") version "4.0.5" apply false
-    id("com.google.cloud.tools.jib") version "3.4.4" apply false
+    id("com.google.cloud.tools.jib") version "3.5.3" apply false
 }
 
 // ─── Shared version constants (referenced in sub-projects via rootProject.ext) ─

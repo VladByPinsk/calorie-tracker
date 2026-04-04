@@ -20,7 +20,7 @@ dependencies {
     testImplementation("org.testcontainers:postgresql")
     testImplementation("org.testcontainers:kafka")
     testImplementation("org.springframework.security:spring-security-test")
-    implementation("org.springframework.ai:spring-ai-pgvector-store:1.0.0")
+    implementation("org.springframework.ai:spring-ai-pgvector-store:1.1.4")
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
 }
 

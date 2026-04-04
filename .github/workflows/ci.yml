@@ -47,6 +47,10 @@ jobs:
     needs: changes
     if: needs.changes.outputs.java == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      checks:        write   # publish JUnit test results as a check run
+      pull-requests: write   # post test summary comment on PRs
+      contents:      read
     strategy:
       fail-fast: false
       matrix:
@@ -72,6 +76,14 @@ jobs:
       - name: Run checks (Checkstyle + Tests + JaCoCo)
         run: ./gradlew :services:${{ matrix.service }}:check
 
+      - name: Publish JUnit test results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          junit_files: "services/${{ matrix.service }}/build/test-results/test/*.xml"
+          check_name:  "Tests — ${{ matrix.service }}"
+          comment_mode: failures   # only comment on PR if there are failures
+
       - name: Upload coverage report
         if: always()
         uses: actions/upload-artifact@v7
@@ -79,6 +91,15 @@ jobs:
           name: coverage-${{ matrix.service }}
           path: services/${{ matrix.service }}/build/reports/jacoco/test/html/
           retention-days: 7
+
+      - name: Coverage summary
+        if: always()
+        run: |
+          REPORT="services/${{ matrix.service }}/build/reports/jacoco/test/html/index.html"
+          if [ -f "$REPORT" ]; then
+            COVERED=$(grep -oP '(?<=<td class="ctr2">)\d+(?=%)' "$REPORT" | head -1 || echo "?")
+            echo "### Coverage — ${{ matrix.service }}: ${COVERED}%" >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Build JAR
         run: ./gradlew :services:${{ matrix.service }}:bootJar

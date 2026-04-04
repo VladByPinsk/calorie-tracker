@@ -1,50 +1,77 @@
 name: Release
 
-# release-please by Google automates the full release lifecycle:
-#   1. Watches conventional commits on main (feat, fix, chore!, etc.)
-#   2. Opens a "Release PR" that bumps versions + writes CHANGELOG.md
-#   3. When you merge the Release PR it creates a GitHub Release + git tag
+# Calendar-versioned (CalVer) release pipeline
 #
-# Conventional commit → version bump mapping:
-#   feat:          minor  (1.0.0 → 1.1.0)
-#   fix:           patch  (1.0.0 → 1.0.1)
-#   feat!: / BREAKING CHANGE:  major  (1.0.0 → 2.0.0)
-#   chore/docs/refactor/test:  no bump (collected in CHANGELOG only)
+# Version format:  YYYY.MM.N
+#   YYYY  – four-digit UTC year   (e.g. 2026)
+#   MM    – zero-padded UTC month (e.g. 04)
+#   N     – sequential release counter that resets every month (1, 2, 3 …)
+#
+# Examples:  2026.04.1  →  2026.04.2  →  2026.05.1 (new month resets to 1)
+#
+# Flow:
+#   push to main ──► compute tag ──► git tag + GitHub Release ──► Jib Docker images
 
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
-  contents:      write   # create tags and releases
-  pull-requests: write   # open/update the Release PR
+  contents: write   # create tags and releases
+  packages: write   # push to GHCR
 
 jobs:
-  release-please:
-    name: Release Please
+  # ── 1. Compute CalVer tag, create git tag and GitHub Release ─────────────────
+  calver-tag:
+    name: Create CalVer Tag & Release
     runs-on: ubuntu-latest
     outputs:
-      # Expose whether a release was actually created so downstream jobs
-      # (e.g. push release-tagged images) can gate on it.
-      release_created: ${{ steps.release.outputs.release_created }}
-      tag_name:        ${{ steps.release.outputs.tag_name }}
+      tag_name:       ${{ steps.tag.outputs.tag }}
+      release_created: ${{ steps.tag.outputs.created }}
 
     steps:
-      - name: Run Release Please
-        id: release
-        uses: googleapis/release-please-action@v4
+      - uses: actions/checkout@v4
         with:
-          # Treats the repo as a Java/multi-module project.
-          # Bumps version in build.gradle.kts and generates CHANGELOG.md.
-          release-type: java
-          # Use the default GITHUB_TOKEN — no PAT needed.
-          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0   # full history needed to list existing tags
 
-  # ── When a release IS created: push release-tagged Docker images ──────────
+      - name: Compute next CalVer tag
+        id: tag
+        run: |
+          YEAR=$(date -u +%Y)
+          MONTH=$(date -u +%m)
+          PREFIX="${YEAR}.${MONTH}"
+
+          # Find the highest sequence number already published for this month
+          LAST=$(git tag -l "${PREFIX}.*" | sort -t. -k3 -n | tail -1)
+          if [ -z "$LAST" ]; then
+            SEQ=1
+          else
+            SEQ=$(echo "$LAST" | awk -F. '{print $3 + 1}')
+          fi
+
+          TAG="${PREFIX}.${SEQ}"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "${TAG}" -m "Release ${TAG}"
+          git push origin "${TAG}"
+          echo "created=true" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name:              ${{ steps.tag.outputs.tag }}
+          name:                  ${{ steps.tag.outputs.tag }}
+          generate_release_notes: true
+          token:                 ${{ secrets.GITHUB_TOKEN }}
+
+  # ── 2. Build & push release-tagged Docker images via Jib ─────────────────────
   docker-release:
     name: Push release image — ${{ matrix.service }}
-    needs: release-please
-    if: needs.release-please.outputs.release_created == 'true'
+    needs: calver-tag
+    if: needs.calver-tag.outputs.release_created == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -82,10 +109,72 @@ jobs:
 
       - name: Build & push versioned image with Jib
         env:
-          TAG: ${{ needs.release-please.outputs.tag_name }}
+          TAG: ${{ needs.calver-tag.outputs.tag_name }}
         run: |
           ./gradlew :services:${{ matrix.service }}:jib \
             -Djib.to.auth.username=${{ github.actor }} \
             -Djib.to.auth.password=${{ secrets.GITHUB_TOKEN }} \
             -Djib.to.tags=${TAG},latest
 
+      - name: Install Trivy
+        env:
+          TRIVY_VERSION: "0.69.3"
+        run: |
+          curl -sLo /tmp/trivy.tar.gz \
+            "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+          tar -xzf /tmp/trivy.tar.gz -C /usr/local/bin trivy
+
+      - name: Scan container image
+        env:
+          TAG: ${{ needs.calver-tag.outputs.tag_name }}
+          # Trivy reuses the docker login credentials already set by docker/login-action
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          trivy image \
+            --format  sarif \
+            --output  trivy-image-${{ matrix.service }}.sarif \
+            --severity CRITICAL,HIGH \
+            --ignore-unfixed \
+            --exit-code 0 \
+            ghcr.io/${{ github.repository_owner }}/calorie-tracker/${{ matrix.service }}:${TAG}
+
+      - name: Upload image scan results to Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: trivy-image-${{ matrix.service }}.sarif
+          category:   trivy-image-${{ matrix.service }}
+
+  # ── 3. Generate SBOM and attach to the GitHub Release ────────────────────────
+  sbom:
+    name: Generate & attach SBOM
+    needs: calver-tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # update the GitHub Release with SBOM assets
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install syft (SBOM generator)
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh \
+            | sh -s -- -b /usr/local/bin
+
+      - name: Generate CycloneDX + SPDX SBOMs
+        run: |
+          # CycloneDX JSON — consumed by most SBOM toolchains (OWASP, GitHub, etc.)
+          syft dir:. \
+            --output cyclonedx-json=sbom.cdx.json \
+            --output spdx-json=sbom.spdx.json \
+            --quiet
+
+      - name: Attach SBOMs to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.calver-tag.outputs.tag_name }}
+          files: |
+            sbom.cdx.json
+            sbom.spdx.json
+          token: ${{ secrets.GITHUB_TOKEN }}

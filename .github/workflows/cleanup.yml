@@ -1,0 +1,102 @@
+name: Cleanup
+
+# Two cleanup jobs run on a schedule:
+#
+#   1. GHCR old images — deletes untagged and old versioned images from the
+#      GitHub Container Registry, keeping only the last 10 CalVer tags per
+#      service. Prevents the registry from growing unbounded.
+#
+#   2. Stale PRs & issues — labels issues/PRs inactive for 30 days as "stale"
+#      and closes them after a further 7 days without activity.
+
+on:
+  schedule:
+    - cron: '0 4 * * 0'   # every Sunday at 04:00 UTC (after weekly Trivy scan)
+  workflow_dispatch:        # allow manual trigger
+
+permissions:
+  packages:      write   # delete GHCR images
+  issues:        write   # label + close stale issues
+  pull-requests: write   # label + close stale PRs
+  contents:      read
+
+jobs:
+  # ── 1. Delete old GHCR images ───────────────────────────────────────────────
+  cleanup-images:
+    name: Clean up old GHCR images
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - auth-service
+          - user-service
+          - food-service
+          - diary-service
+          - ai-service
+          - analytics-service
+          - notification-service
+          - api-gateway
+          - eureka-server
+          - config-server
+
+    steps:
+      - name: Delete untagged versions (dangling layers)
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name:      calorie-tracker/${{ matrix.package }}
+          package-type:      container
+          token:             ${{ secrets.GITHUB_TOKEN }}
+          delete-only-untagged-versions: true
+
+      - name: Keep only the 10 most recent tagged versions
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name:      calorie-tracker/${{ matrix.package }}
+          package-type:      container
+          token:             ${{ secrets.GITHUB_TOKEN }}
+          min-versions-to-keep: 10
+          # Never delete images tagged "latest" — always keep the current prod image
+          ignore-versions:   '^latest$'
+
+  # ── 2. Mark and close stale issues / PRs ───────────────────────────────────
+  stale:
+    name: Close stale issues and PRs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+          # ── Issues ──────────────────────────────────────────────────────────
+          days-before-issue-stale:  30   # label as stale after 30 days
+          days-before-issue-close:   7   # close 7 days after stale label
+          stale-issue-label:       'state: stale'
+          close-issue-label:       'state: closed-stale'
+          stale-issue-message: >
+            This issue has been inactive for 30 days. It will be closed in 7 days
+            unless there is new activity. If it is still relevant, please comment
+            or remove the `state: stale` label.
+          close-issue-message: >
+            Closing due to inactivity. Feel free to reopen if this is still
+            relevant — just add a comment explaining why.
+
+          # ── Pull Requests ─────────────────────────────────────────────────
+          days-before-pr-stale:    21   # PRs go stale faster — 21 days
+          days-before-pr-close:     7
+          stale-pr-label:          'state: stale'
+          close-pr-label:          'state: closed-stale'
+          stale-pr-message: >
+            This pull request has had no activity for 21 days. It will be closed
+            in 7 days. If you are still working on it, please push a commit or
+            remove the `state: stale` label.
+          close-pr-message: >
+            Closing this PR due to inactivity. You can reopen it at any time.
+
+          # Never mark these as stale
+          exempt-issue-labels:     'state: blocked,type: bug,type: security'
+          exempt-pr-labels:        'state: blocked,type: breaking-change,state: wip'
+
+          # Don't process more than 30 items per run to avoid rate limits
+          operations-per-run:      30
+

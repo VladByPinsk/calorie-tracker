@@ -1,0 +1,148 @@
+# Path-based auto-labeler configuration.
+# Used by actions/labeler@v5 in .github/workflows/labeler.yml.
+#
+# A PR gets a label when ANY file in the diff matches the listed globs.
+# Multiple labels can be applied to the same PR simultaneously.
+
+# ── Layer ─────────────────────────────────────────────────────────────────────
+"layer: backend":
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'services/**'
+      - 'infrastructure/**'
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
+      - 'gradle.properties'
+      - 'gradle/**'
+
+"layer: frontend":
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'web/**'
+
+"layer: mobile":
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'mobile/**'
+
+"layer: infra":
+  - changed-files:
+    - any-glob-to-any-file:
+      - '.github/**'
+      - 'docker/**'
+      - 'scripts/**'
+      - '**/Dockerfile'
+
+# ── Service ───────────────────────────────────────────────────────────────────
+"service: api-gateway":
+  - changed-files:
+    - any-glob-to-any-file: 'services/api-gateway/**'
+
+"service: auth-service":
+  - changed-files:
+    - any-glob-to-any-file: 'services/auth-service/**'
+
+"service: user-service":
+  - changed-files:
+    - any-glob-to-any-file: 'services/user-service/**'
+
+"service: food-service":
+  - changed-files:
+    - any-glob-to-any-file: 'services/food-service/**'
+
+"service: diary-service":
+  - changed-files:
+    - any-glob-to-any-file: 'services/diary-service/**'
+
+"service: ai-service":
+  - changed-files:
+    - any-glob-to-any-file: 'services/ai-service/**'
+
+"service: analytics-service":
+  - changed-files:
+    - any-glob-to-any-file: 'services/analytics-service/**'
+
+"service: notification-service":
+  - changed-files:
+    - any-glob-to-any-file: 'services/notification-service/**'
+
+"service: infrastructure":
+  - changed-files:
+    - any-glob-to-any-file: 'infrastructure/**'
+
+# ── Domain ────────────────────────────────────────────────────────────────────
+"domain: database":
+  - changed-files:
+    - any-glob-to-any-file: '**/db/migration/**'
+
+"domain: kafka":
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/kafka/**'
+      - '**/events/**'
+      - '**/consumer/**'
+      - '**/producer/**'
+
+"domain: ai":
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'services/ai-service/**'
+      - '**/ollama/**'
+      - '**/rag/**'
+      - '**/pgvector/**'
+
+"domain: i18n":
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'web/public/locales/**'
+      - 'mobile/i18n/**'
+
+"domain: auth":
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'services/auth-service/**'
+      - 'services/api-gateway/**'
+      - '**/security/**'
+      - '**/jwt/**'
+
+# ── Type: dependencies ────────────────────────────────────────────────────────
+"type: dependencies":
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/build.gradle.kts'
+      - '**/package.json'
+      - '**/package-lock.json'
+      - '.github/dependabot.yml'
+      - 'gradle/wrapper/**'
+
+# ── Type: devops ──────────────────────────────────────────────────────────────
+"type: devops":
+  - changed-files:
+    - any-glob-to-any-file:
+      - '.github/workflows/**'
+      - 'docker/**'
+      - 'scripts/**'
+      - '**/Dockerfile'
+      - 'infrastructure/**'
+
+# ── Type: docs ────────────────────────────────────────────────────────────────
+"type: docs":
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.md'
+      - 'docs/**'
+      - '.github/copilot-instructions.md'
+      - '.github/copilot-review-instructions.md'
+
+# ── Type: test ────────────────────────────────────────────────────────────────
+"type: test":
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*Test.java'
+      - '**/*IT.java'
+      - '**/*Spec.java'
+      - '**/__tests__/**'
+      - '**/*.test.ts'
+      - '**/*.test.tsx'
+      - '**/*.spec.ts'
+

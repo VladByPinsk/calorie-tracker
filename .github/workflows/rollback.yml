@@ -1,0 +1,176 @@
+name: Rollback
+
+# Emergency rollback to any previous CalVer release.
+#
+# Pulls the already-published Docker image for the requested tag and
+# re-deploys it without rebuilding anything — so rollback is fast.
+#
+# Usage:
+#   Actions → Rollback → Run workflow
+#     version:     2026.04.1   (the CalVer tag you want to restore)
+#     environment: staging | production | both
+#
+# Production rollback still requires the "production" environment approval
+# (configured under Repo → Settings → Environments).
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'CalVer tag to roll back to (e.g. 2026.04.1)'
+        required: true
+      environment:
+        description: 'Target environment'
+        required: true
+        default: staging
+        type: choice
+        options: [staging, production, both]
+
+jobs:
+  # ── Guard: verify the requested tag actually exists ──────────────────────────
+  verify-tag:
+    name: Verify tag ${{ inputs.version }} exists
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check tag
+        run: |
+          if ! git rev-parse "refs/tags/${{ inputs.version }}" >/dev/null 2>&1; then
+            echo "❌ Tag '${{ inputs.version }}' does not exist in this repository."
+            echo "Available recent tags:"
+            git tag -l | sort -t. -k1,1 -k2,2 -k3,3n | tail -20
+            exit 1
+          fi
+          echo "✅ Tag '${{ inputs.version }}' verified."
+
+  # ── 1. Rollback staging ───────────────────────────────────────────────────────
+  rollback-staging:
+    name: ⏪ Rollback Staging → ${{ inputs.version }}
+    needs: verify-tag
+    if: inputs.environment == 'staging' || inputs.environment == 'both'
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging.calorie-tracker.example.com
+
+    steps:
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pre-pull rollback images
+        run: |
+          for svc in auth-service user-service food-service diary-service \
+                     ai-service analytics-service notification-service api-gateway; do
+            docker pull ghcr.io/${{ github.repository_owner }}/calorie-tracker/${svc}:${{ inputs.version }} || true
+          done
+
+      - name: Roll back staging via SSH
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host:     ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_USER }}
+          key:      ${{ secrets.STAGING_SSH_KEY }}
+          script: |
+            set -e
+            VERSION="${{ inputs.version }}"
+            echo "⏪ Rolling back staging to ${VERSION} ..."
+            cd /opt/calorie-tracker
+            IMAGE_TAG=${VERSION} docker compose \
+              -f docker/docker-compose.yml \
+              -f docker/docker-compose.prod.yml \
+              pull
+            IMAGE_TAG=${VERSION} docker compose \
+              -f docker/docker-compose.yml \
+              -f docker/docker-compose.prod.yml \
+              up -d --no-deps --remove-orphans
+            docker system prune -f
+            echo "✅ Staging is now on ${VERSION}"
+
+      - name: Smoke test staging after rollback
+        run: |
+          sleep 15
+          curl --fail --retry 5 --retry-delay 5 \
+            https://staging.calorie-tracker.example.com/actuator/health \
+            || (echo "❌ Staging health check failed after rollback"; exit 1)
+          echo "✅ Staging health check passed"
+
+  # ── 2. Rollback production ───────────────────────────────────────────────────
+  rollback-production:
+    name: ⏪ Rollback Production → ${{ inputs.version }}
+    needs: [verify-tag, rollback-staging]
+    # Run when: environment is production or both, AND staging either succeeded or was skipped
+    if: |
+      always() &&
+      needs.verify-tag.result == 'success' &&
+      (inputs.environment == 'production' || inputs.environment == 'both') &&
+      (needs.rollback-staging.result == 'success' || needs.rollback-staging.result == 'skipped')
+    runs-on: ubuntu-latest
+    environment:
+      name: production         # ← manual approval gate fires here
+      url: https://calorie-tracker.example.com
+
+    steps:
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pre-pull rollback images
+        run: |
+          for svc in auth-service user-service food-service diary-service \
+                     ai-service analytics-service notification-service api-gateway; do
+            docker pull ghcr.io/${{ github.repository_owner }}/calorie-tracker/${svc}:${{ inputs.version }} || true
+          done
+
+      - name: Roll back production via SSH
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host:     ${{ secrets.PRODUCTION_HOST }}
+          username: ${{ secrets.PRODUCTION_USER }}
+          key:      ${{ secrets.PRODUCTION_SSH_KEY }}
+          script: |
+            set -e
+            VERSION="${{ inputs.version }}"
+            echo "⏪ Rolling back production to ${VERSION} ..."
+            cd /opt/calorie-tracker
+            IMAGE_TAG=${VERSION} docker compose \
+              -f docker/docker-compose.yml \
+              -f docker/docker-compose.prod.yml \
+              pull
+            IMAGE_TAG=${VERSION} docker compose \
+              -f docker/docker-compose.yml \
+              -f docker/docker-compose.prod.yml \
+              up -d --no-deps --remove-orphans
+            docker system prune -f
+            echo "✅ Production is now on ${VERSION}"
+
+      - name: Smoke test production after rollback
+        run: |
+          sleep 15
+          curl --fail --retry 5 --retry-delay 5 \
+            https://calorie-tracker.example.com/actuator/health \
+            || (echo "❌ Production health check failed after rollback"; exit 1)
+          echo "✅ Production health check passed"
+
+      - name: Annotate rollback in Grafana
+        env:
+          GRAFANA_URL:   ${{ secrets.GRAFANA_URL }}
+          GRAFANA_TOKEN: ${{ secrets.GRAFANA_TOKEN }}
+        run: |
+          curl -s -X POST "${GRAFANA_URL}/api/annotations" \
+            -H "Authorization: Bearer ${GRAFANA_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"text\": \"⏪ ROLLBACK: production rolled back to ${{ inputs.version }} by ${{ github.actor }}\",
+              \"tags\": [\"rollback\", \"production\", \"${{ inputs.version }}\"]
+            }" || true
+

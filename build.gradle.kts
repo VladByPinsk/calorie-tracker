@@ -146,12 +146,21 @@ subprojects {
         toolVersion = "0.8.12"
     }
 
+    // Classes excluded from JaCoCo analysis in all tasks below.
+    // *Application  — trivial Spring Boot entry-point (main method only), cannot be unit-tested.
+    // *MapperImpl   — MapStruct-generated code, not hand-written.
+    val jacocoExcludes = listOf("**/*Application.class", "**/*MapperImpl.class")
+
+    fun ConfigurableFileCollection.applyJacocoExcludes() =
+        setFrom(files(files.map { fileTree(it) { exclude(jacocoExcludes) } }))
+
     tasks.named<JacocoReport>("jacocoTestReport") {
         dependsOn(tasks.named("test"))
         reports {
             xml.required.set(true)   // consumed by SonarCloud / CI coverage tools
             html.required.set(true)  // human-readable report in build/reports/jacoco/
         }
+        classDirectories.applyJacocoExcludes()
     }
 
     tasks.named<JacocoCoverageVerification>("jacocoTestCoverageVerification") {
@@ -159,11 +168,13 @@ subprojects {
             rule {
                 limit {
                     // Minimum line coverage across the whole module.
+                    // Only non-trivial classes (Application + MapperImpl excluded above) count.
                     // Raise this gradually (70 → 75 → 80 …) as tests are added.
                     minimum = "0.70".toBigDecimal()
                 }
             }
         }
+        classDirectories.applyJacocoExcludes()
     }
 
     // Run coverage verification as part of the standard `check` lifecycle.

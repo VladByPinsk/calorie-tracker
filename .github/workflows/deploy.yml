@@ -52,7 +52,7 @@ jobs:
           done
 
       - name: Deploy to staging via SSH
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.5
         with:
           host:     ${{ secrets.STAGING_HOST }}
           username: ${{ secrets.STAGING_USER }}
@@ -91,7 +91,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Deploy to production via SSH
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.5
         with:
           host:     ${{ secrets.PRODUCTION_HOST }}
           username: ${{ secrets.PRODUCTION_USER }}

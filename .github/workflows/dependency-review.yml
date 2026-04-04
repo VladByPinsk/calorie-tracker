@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # Submit the Gradle dependency snapshot for this exact HEAD SHA
       # BEFORE the review action runs. This fixes "No snapshots were found"

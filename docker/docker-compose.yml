@@ -233,7 +233,46 @@ services:
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
       - '--web.enable-lifecycle'
+    depends_on: [alertmanager]
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    ports: ["9093:9093"]
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./alertmanager/templates:/etc/alertmanager/templates:ro
+      - alertmanager_data:/alertmanager   # persist silence/notification state
+    environment:
+      ALERTMANAGER_SMTP_HOST:        ${ALERTMANAGER_SMTP_HOST:-smtp.gmail.com:587}
+      ALERTMANAGER_SMTP_FROM:        ${ALERTMANAGER_SMTP_FROM:-alerts@example.com}
+      ALERTMANAGER_SMTP_USERNAME:    ${ALERTMANAGER_SMTP_USERNAME:-}
+      ALERTMANAGER_SMTP_PASSWORD:    ${ALERTMANAGER_SMTP_PASSWORD:-}
+      ALERTMANAGER_EMAIL_TO:         ${ALERTMANAGER_EMAIL_TO:-oncall@example.com}
+      ALERTMANAGER_SLACK_WEBHOOK_URL: ${ALERTMANAGER_SLACK_WEBHOOK_URL:-}
+      ALERTMANAGER_SLACK_CHANNEL:    ${ALERTMANAGER_SLACK_CHANNEL:-#alerts}
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+      - '--config.expand-env=true'   # expand ${ALERTMANAGER_*} placeholders in alertmanager.yml
+
+  # Exports host-level metrics (CPU, memory, disk, network) to Prometheus.
+  # Runs on the Compose network (not host networking) so Prometheus can reach
+  # it via DNS name "node-exporter:9100".
+  node-exporter:
+    image: prom/node-exporter:latest
+    ports: ["9100:9100"]
+    pid: host
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
 
   grafana:
     image: grafana/grafana:latest
@@ -251,3 +290,4 @@ volumes:
   minio_data:
   ollama_data:
   grafana_data:
+  alertmanager_data:

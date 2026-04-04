@@ -1,0 +1,158 @@
+# Label definitions — managed by crazy-max/ghaction-github-labeler.
+# Run "Actions → Sync Labels" to create/update/delete labels in the repo.
+# Colors are hex without the leading #.
+
+# ── Type ──────────────────────────────────────────────────────────────────────
+- name: "type: feature"
+  color: "0075ca"
+  description: "New feature or capability"
+
+- name: "type: bug"
+  color: "d73a4a"
+  description: "Something isn't working"
+
+- name: "type: breaking-change"
+  color: "b60205"
+  description: "Introduces a breaking API or schema change"
+
+- name: "type: refactor"
+  color: "e4e669"
+  description: "Code improvement without behaviour change"
+
+- name: "type: devops"
+  color: "0e8a16"
+  description: "CI/CD, Docker, Gradle, infrastructure"
+
+- name: "type: docs"
+  color: "cfd3d7"
+  description: "Documentation only"
+
+- name: "type: security"
+  color: "ee0701"
+  description: "Security fix or hardening"
+
+- name: "type: dependencies"
+  color: "0366d6"
+  description: "Dependency version update"
+
+- name: "type: test"
+  color: "f9d0c4"
+  description: "Tests added or updated"
+
+# ── Service ───────────────────────────────────────────────────────────────────
+- name: "service: api-gateway"
+  color: "7057ff"
+  description: "Spring Cloud Gateway (port 8080)"
+
+- name: "service: auth-service"
+  color: "7057ff"
+  description: "JWT / MFA / OAuth2 (port 8081)"
+
+- name: "service: user-service"
+  color: "7057ff"
+  description: "User profile, goals, TDEE (port 8082)"
+
+- name: "service: food-service"
+  color: "7057ff"
+  description: "Food DB, barcode, pgvector (port 8083)"
+
+- name: "service: diary-service"
+  color: "7057ff"
+  description: "Daily diary, meals, water (port 8084)"
+
+- name: "service: ai-service"
+  color: "7057ff"
+  description: "Ollama RAG, photo recognition (port 8085)"
+
+- name: "service: analytics-service"
+  color: "7057ff"
+  description: "Calorie trends, streaks (port 8086)"
+
+- name: "service: notification-service"
+  color: "7057ff"
+  description: "Push, email, SSE (port 8087)"
+
+- name: "service: infrastructure"
+  color: "7057ff"
+  description: "Eureka / Config Server"
+
+# ── Layer ─────────────────────────────────────────────────────────────────────
+- name: "layer: backend"
+  color: "c2e0c6"
+  description: "Java / Spring Boot services"
+
+- name: "layer: frontend"
+  color: "fef2c0"
+  description: "React web (web/)"
+
+- name: "layer: mobile"
+  color: "f9d0c4"
+  description: "React Native / Expo (mobile/)"
+
+- name: "layer: infra"
+  color: "bfd4f2"
+  description: "Docker, CI/CD, GitHub Actions"
+
+# ── Domain ────────────────────────────────────────────────────────────────────
+- name: "domain: database"
+  color: "e99695"
+  description: "Flyway migration or schema change"
+
+- name: "domain: kafka"
+  color: "fbca04"
+  description: "Kafka topics, producers, or consumers"
+
+- name: "domain: ai"
+  color: "d4c5f9"
+  description: "AI / Ollama / pgvector / RAG"
+
+- name: "domain: i18n"
+  color: "f9d0c4"
+  description: "Internationalisation (en/ru locales)"
+
+- name: "domain: auth"
+  color: "ee0701"
+  description: "Authentication or authorisation"
+
+# ── Size (set automatically by the labeler) ───────────────────────────────────
+- name: "size: XS"
+  color: "3cbf00"
+  description: "< 10 lines changed"
+
+- name: "size: S"
+  color: "5d9801"
+  description: "10–49 lines changed"
+
+- name: "size: M"
+  color: "7d6514"
+  description: "50–249 lines changed"
+
+- name: "size: L"
+  color: "b45d0a"
+  description: "250–999 lines changed"
+
+- name: "size: XL"
+  color: "b60205"
+  description: "1000+ lines changed — consider splitting"
+
+# ── State ─────────────────────────────────────────────────────────────────────
+- name: "state: needs-review"
+  color: "e4e669"
+  description: "Waiting for code review"
+
+- name: "state: changes-requested"
+  color: "d93f0b"
+  description: "Review requested changes"
+
+- name: "state: approved"
+  color: "0e8a16"
+  description: "Approved and ready to merge"
+
+- name: "state: blocked"
+  color: "b60205"
+  description: "Blocked by another PR or issue"
+
+- name: "state: wip"
+  color: "cccccc"
+  description: "Work in progress — not ready for review"
+

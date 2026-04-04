@@ -119,10 +119,8 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
-          cache: npm
-          cache-dependency-path: web/package-lock.json
 
-      - run: npm ci
+      - run: npm install
       - run: npm run lint
       - run: npm test
       - run: npm run build
@@ -142,13 +140,11 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
-          cache: npm
-          cache-dependency-path: mobile/package-lock.json
 
-      - run: npm ci
+      - run: npm install
       - run: npm run lint
       - run: npm test
-      # TypeScript type-check (replaces `expo export` which requires native toolchain on CI)
+      # TypeScript type-check (replaces expo export which requires native toolchain on CI)
       - run: npx tsc --noEmit
 
   # ─── Docker Build & Push (only on main) ────────────────────────────────────

@@ -112,6 +112,7 @@ jobs:
           TAG: ${{ needs.calver-tag.outputs.tag_name }}
         run: |
           ./gradlew :services:${{ matrix.service }}:jib \
+            --no-configuration-cache \
             -Djib.to.auth.username=${{ github.actor }} \
             -Djib.to.auth.password=${{ secrets.GITHUB_TOKEN }} \
             -Djib.to.tags=${TAG},latest

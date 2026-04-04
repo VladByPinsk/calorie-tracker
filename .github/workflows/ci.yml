@@ -192,9 +192,11 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build & push with Jib
-        run: ./gradlew :services:${{ matrix.service }}:jib
-          -Djib.to.auth.username=${{ github.actor }}
-          -Djib.to.auth.password=${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./gradlew :services:${{ matrix.service }}:jib \
+            --no-configuration-cache \
+            -Djib.to.auth.username=${{ github.actor }} \
+            -Djib.to.auth.password=${{ secrets.GITHUB_TOKEN }}
 
   # ─── Infrastructure services (eureka + config-server) ──────────────────────
   test-infrastructure:

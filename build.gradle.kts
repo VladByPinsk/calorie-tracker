@@ -2,7 +2,7 @@ plugins {
     java
     checkstyle
     jacoco
-    id("org.springframework.boot") version "4.0.0" apply false
+    id("org.springframework.boot") version "4.0.5" apply false
     id("com.google.cloud.tools.jib") version "3.4.4" apply false
 }
 
@@ -49,9 +49,9 @@ subprojects {
 
                 // CVE-2026-24734 / GHSA-mgp5-rv84-w37q — Tomcat OCSP verification bypass
                 // Spring Boot 4.0.0 BOM → 11.0.14 (vulnerable). Fix: ≥ 11.0.18.
-                force("org.apache.tomcat.embed:tomcat-embed-core:11.0.18")
-                force("org.apache.tomcat.embed:tomcat-embed-websocket:11.0.18")
-                force("org.apache.tomcat.embed:tomcat-embed-el:11.0.18")
+                force("org.apache.tomcat.embed:tomcat-embed-core:11.0.20")
+                force("org.apache.tomcat.embed:tomcat-embed-websocket:11.0.20")
+                force("org.apache.tomcat.embed:tomcat-embed-el:11.0.20")
 
                 // CVE-2025-67030 / GHSA-6fmv-xxpf-w3cw — plexus-utils directory traversal
                 // Transitive via Spring Cloud / Netflix. Fix: ≥ 4.0.3.

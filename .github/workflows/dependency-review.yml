@@ -29,14 +29,14 @@ jobs:
       # both trigger on pull_request simultaneously and the ci.yml submission
       # job may not finish before the review action checks for the snapshot.
       - name: Set up Java 26
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '26'
           distribution: corretto
           cache: gradle
 
       - name: Submit Gradle dependency snapshot
-        uses: gradle/actions/dependency-submission@v4
+        uses: gradle/actions/dependency-submission@v6
 
       - name: Dependency Review
         uses: actions/dependency-review-action@v4

@@ -17,13 +17,13 @@
     "expo-notifications": "~55.0.16",
     "expo-sqlite": "~14.0.0",
     "react": "18.3.1",
-    "react-native": "0.76.5",
+    "react-native": "0.84.1",
     "react-native-web": "~0.19.13",
     "axios": "^1.8.4",
     "i18next": "^24.2.3",
     "react-i18next": "^15.4.1",
     "react-native-safe-area-context": "5.7.0",
-    "react-native-screens": "~4.4.0",
+    "react-native-screens": "~4.24.0",
     "@react-native-community/datetimepicker": "8.2.0"
   },
   "devDependencies": {

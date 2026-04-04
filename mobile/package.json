@@ -20,7 +20,7 @@
     "react-native": "0.84.1",
     "react-native-web": "~0.19.13",
     "axios": "^1.8.4",
-    "i18next": "^24.2.3",
+    "i18next": "^26.0.3",
     "react-i18next": "^15.4.1",
     "react-native-safe-area-context": "5.7.0",
     "react-native-screens": "~4.24.0",

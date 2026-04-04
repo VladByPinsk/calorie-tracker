@@ -243,6 +243,7 @@ services:
     volumes:
       - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
       - ./alertmanager/templates:/etc/alertmanager/templates:ro
+      - alertmanager_data:/alertmanager   # persist silence/notification state
     environment:
       ALERTMANAGER_SMTP_HOST:        ${ALERTMANAGER_SMTP_HOST:-smtp.gmail.com:587}
       ALERTMANAGER_SMTP_FROM:        ${ALERTMANAGER_SMTP_FROM:-alerts@example.com}
@@ -254,6 +255,7 @@ services:
     command:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
       - '--storage.path=/alertmanager'
+      - '--config.expand-env=true'   # expand ${ALERTMANAGER_*} placeholders in alertmanager.yml
 
   # Exports host-level metrics (CPU, memory, disk, network) to Prometheus.
   # Runs on the Compose network (not host networking) so Prometheus can reach

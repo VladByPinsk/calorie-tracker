@@ -256,9 +256,11 @@ services:
       - '--storage.path=/alertmanager'
 
   # Exports host-level metrics (CPU, memory, disk, network) to Prometheus.
+  # Runs on the Compose network (not host networking) so Prometheus can reach
+  # it via DNS name "node-exporter:9100".
   node-exporter:
     image: prom/node-exporter:latest
-    network_mode: host
+    ports: ["9100:9100"]
     pid: host
     volumes:
       - /proc:/host/proc:ro

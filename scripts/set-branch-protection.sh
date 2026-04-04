@@ -1,20 +1,30 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-TOKEN=$(security find-internet-password -s github.com -a VladByPinsk -w 2>/dev/null)
+# ── Configuration ─────────────────────────────────────────────────────────────
+# Read from environment — never bake secrets or personal accounts into scripts.
+#   export GITHUB_TOKEN=<your PAT>
+#   OWNER=MyOrg REPO=my-repo BRANCH=main ./set-branch-protection.sh
+OWNER="${OWNER:-VladByPinsk}"
+REPO="${REPO:-calorie-tracker}"
+BRANCH="${BRANCH:-main}"
 
-# Get numeric user ID
-USER_ID=$(curl -s -H "Authorization: Bearer $TOKEN" https://api.github.com/user \
-  | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
-echo "User ID: $USER_ID"
+if [[ -z "${GITHUB_TOKEN:-}" ]]; then
+  echo "ERROR: GITHUB_TOKEN is not set. Export it before running this script." >&2
+  exit 1
+fi
 
-# Re-apply with numeric ID in bypass allowances
+API_URL="https://api.github.com/repos/${OWNER}/${REPO}/branches/${BRANCH}/protection"
+
+# Re-apply branch protection rules.
+# bypass_pull_request_allowances.users accepts login strings (not numeric IDs)
+# per the GitHub REST API v2022-11-28 spec.
 RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" \
   -X PUT \
-  -H "Authorization: Bearer $TOKEN" \
+  -H "Authorization: Bearer ${GITHUB_TOKEN}" \
   -H "Accept: application/vnd.github+json" \
   -H "X-GitHub-Api-Version: 2022-11-28" \
-  "https://api.github.com/repos/VladByPinsk/calorie-tracker/branches/main/protection" \
+  "${API_URL}" \
   -d '{
     "required_status_checks": { "strict": true, "contexts": ["CI"] },
     "enforce_admins": false,
@@ -25,7 +35,7 @@ RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" \
       "require_last_push_approval": false
     },
     "bypass_pull_request_allowances": {
-      "users": ["VladByPinsk"],
+      "users": ["'"${OWNER}"'"],
       "teams": [],
       "apps": []
     },
@@ -51,4 +61,3 @@ print('require_last_push_approval:', rpr.get('require_last_push_approval'))
 print('enforce_admins            :', d.get('enforce_admins', {}).get('enabled'))
 print('bypass users              :', [u.get('login') for u in bpa.get('users', [])])
 PYEOF
-

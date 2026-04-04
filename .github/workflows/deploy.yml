@@ -110,7 +110,14 @@ jobs:
   deploy-production:
     name: Deploy → Production (${{ needs.resolve-version.outputs.version }})
     needs: [resolve-version, deploy-staging]
-    if: github.event_name == 'release' || inputs.target == 'production'
+    # always() lets this job run even when deploy-staging was skipped
+    # (which happens on workflow_dispatch with target=production).
+    # We still gate on staging having either succeeded or been skipped — never failed.
+    if: |
+      always() &&
+      needs.resolve-version.result == 'success' &&
+      (github.event_name == 'release' || inputs.target == 'production') &&
+      (needs.deploy-staging.result == 'success' || needs.deploy-staging.result == 'skipped')
     runs-on: ubuntu-latest
     environment:
       name: production

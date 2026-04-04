@@ -23,6 +23,7 @@ services:
     build: !reset null
     image: ghcr.io/${GHCR_OWNER:-vladbyPinsk}/calorie-tracker/eureka-server:${IMAGE_TAG:-latest}
     restart: unless-stopped
+    ports: !reset []    # internal only — not reachable outside the Compose network
     deploy:
       resources:
         limits:   { memory: 512m, cpus: '0.5' }
@@ -32,6 +33,7 @@ services:
     build: !reset null
     image: ghcr.io/${GHCR_OWNER:-vladbyPinsk}/calorie-tracker/config-server:${IMAGE_TAG:-latest}
     restart: unless-stopped
+    ports: !reset []    # internal only
     deploy:
       resources:
         limits:   { memory: 512m, cpus: '0.5' }
@@ -41,6 +43,7 @@ services:
     build: !reset null
     image: ghcr.io/${GHCR_OWNER:-vladbyPinsk}/calorie-tracker/api-gateway:${IMAGE_TAG:-latest}
     restart: unless-stopped
+    ports: !reset []    # exposed via nginx only — direct port must be closed in prod
     deploy:
       resources:
         limits:   { memory: 768m, cpus: '1.0' }
@@ -163,6 +166,45 @@ services:
 
   # ── Nginx — the only publicly reachable entry point ───────────────────────
   nginx:
+    # ...existing code...
+
+  # ── Observability — internal only in production ────────────────────────────
+  # All ports are reset so these services are reachable only inside the
+  # Compose network. Access Grafana/Prometheus through nginx or an SSH tunnel.
+  zipkin:
+    restart: unless-stopped
+    ports: !reset []
+    deploy:
+      resources:
+        limits:   { memory: 512m, cpus: '0.5' }
+
+  prometheus:
+    restart: unless-stopped
+    ports: !reset []
+    deploy:
+      resources:
+        limits:   { memory: 1g, cpus: '1.0' }
+
+  alertmanager:
+    restart: unless-stopped
+    ports: !reset []
+    deploy:
+      resources:
+        limits:   { memory: 256m, cpus: '0.25' }
+
+  grafana:
+    restart: unless-stopped
+    ports: !reset []    # serve via nginx reverse proxy in prod
+    deploy:
+      resources:
+        limits:   { memory: 512m, cpus: '0.5' }
+
+  node-exporter:
+    restart: unless-stopped
+    ports: !reset []    # scraped by Prometheus internally; no public exposure needed
+    deploy:
+      resources:
+        limits:   { memory: 128m, cpus: '0.1' }
     image: nginx:1.27-alpine
     restart: unless-stopped
     ports: ["80:80", "443:443"]

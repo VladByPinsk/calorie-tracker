@@ -89,7 +89,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Sync labels to GitHub
-        uses: crazy-max/ghaction-github-labeler@v5
+        uses: crazy-max/ghaction-github-labeler@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           config-file:  .github/labels.yml

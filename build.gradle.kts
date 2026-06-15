@@ -83,7 +83,7 @@ subprojects {
                 // NOTE: also added as a dependency constraint below so that
                 //       gradle/actions/dependency-submission reports 3.1.1 (not the
                 //       BOM-declared 3.0.2) in the submitted graph snapshot.
-                force("tools.jackson.core:jackson-core:3.1.1")
+                force("tools.jackson.core:jackson-core:3.2.0")
             }
         }
     }

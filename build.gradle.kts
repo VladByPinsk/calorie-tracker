@@ -55,7 +55,7 @@ subprojects {
 
                 // CVE-2025-67030 / GHSA-6fmv-xxpf-w3cw — plexus-utils directory traversal
                 // Transitive via Spring Cloud / Netflix. Fix: ≥ 4.0.3.
-                force("org.codehaus.plexus:plexus-utils:4.0.3")
+                force("org.codehaus.plexus:plexus-utils:4.1.0")
 
                 // CVE-2026-33870 / GHSA-pwqr-wmgm-9rr8 — Netty HTTP/1.1 request smuggling
                 // CVE-2026-33871 / GHSA-w9fj-cfpg-grvv — Netty HTTP/2 CONTINUATION DoS

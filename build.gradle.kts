@@ -61,13 +61,13 @@ subprojects {
                 // CVE-2026-33871 / GHSA-w9fj-cfpg-grvv — Netty HTTP/2 CONTINUATION DoS
                 // CVE database only tracks the 4.1.x fix (4.1.132.Final); the 4.2.x
                 // clean version is 4.2.12.Final (validated CVE-free). Fix: ≥ 4.2.12.Final.
-                force("io.netty:netty-codec-http:4.2.12.Final")
-                force("io.netty:netty-codec-http2:4.2.12.Final")
-                force("io.netty:netty-codec:4.2.12.Final")
-                force("io.netty:netty-handler:4.2.12.Final")
-                force("io.netty:netty-transport:4.2.12.Final")
-                force("io.netty:netty-common:4.2.12.Final")
-                force("io.netty:netty-buffer:4.2.12.Final")
+                force("io.netty:netty-codec-http:4.2.19.Final")
+                force("io.netty:netty-codec-http2:4.2.19.Final")
+                force("io.netty:netty-codec:4.2.19.Final")
+                force("io.netty:netty-handler:4.2.19.Final")
+                force("io.netty:netty-transport:4.2.19.Final")
+                force("io.netty:netty-common:4.2.19.Final")
+                force("io.netty:netty-buffer:4.2.19.Final")
 
                 // CVE-2025-48734 / GHSA-wxr5-93ph-8wr9 — commons-beanutils improper access
                 // Transitive via Spring Cloud Netflix. Fix: ≥ 1.11.0.
